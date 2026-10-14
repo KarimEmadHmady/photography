@@ -1,0 +1,1074 @@
+{
+  "info": {
+    "_postman_id": "9a5b3c4d-8e1f-42a7-b8d9-3f0e8a71c52d",
+    "name": "Mostafa Metwaly Photography API",
+    "description": "Complete Postman collection to test all endpoints for Mostafa Metwaly Photography Backend. Includes authentication, admin security, regions, locations, services, site settings, homepage config, and media upload. All dynamic values (tokens, IDs, slugs) use collection variables with automated test scripts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string",
+      "description": "Base URL for the API endpoints (default port 5000 with /api/v1 prefix)"
+    },
+    {
+      "key": "adminPhone",
+      "value": "01000000000",
+      "type": "string",
+      "description": "Default admin phone number for login"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin@123456",
+      "type": "string",
+      "description": "Default admin password"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT authentication token (auto-populated by Login endpoint)"
+    },
+    {
+      "key": "regionId",
+      "value": "",
+      "type": "string",
+      "description": "Region MongoDB ObjectId (auto-populated by Create Region)"
+    },
+    {
+      "key": "regionSlug",
+      "value": "greater-cairo",
+      "type": "string",
+      "description": "Region Slug for public queries"
+    },
+    {
+      "key": "locationId",
+      "value": "",
+      "type": "string",
+      "description": "Location MongoDB ObjectId (auto-populated by Create Location)"
+    },
+    {
+      "key": "locationSlug",
+      "value": "baron-empan-palace",
+      "type": "string",
+      "description": "Location Slug for public queries"
+    },
+    {
+      "key": "serviceId",
+      "value": "",
+      "type": "string",
+      "description": "Service MongoDB ObjectId (auto-populated by Create Service)"
+    },
+    {
+      "key": "serviceSlug",
+      "value": "full-day-wedding-package",
+      "type": "string",
+      "description": "Service Slug for public queries"
+    },
+    {
+      "key": "uploadPublicId",
+      "value": "",
+      "type": "string",
+      "description": "Cloudinary Public ID of uploaded image (auto-populated by Upload Image)"
+    }
+  ],
+  "item": [
+    {
+      "name": "00. Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Health check endpoint to verify backend service status and current timestamp."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01. Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set(\"token\", jsonData.data.token);",
+                  "    console.log(\"Saved token to collection variable:\", jsonData.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{adminPhone}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Logs in the admin. Automatically saves the returned JWT token to the {{token}} collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Admin Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Retrieves the currently authenticated admin's details using the Bearer token."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Clears the authentication cookie for the admin session."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02. Admin Profile & Security",
+      "item": [
+        {
+          "name": "Update Admin Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"مصطفى متولي\",\n  \"email\": \"admin@mostafametwaly.com\",\n  \"phone\": \"01000000000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "profile"]
+            },
+            "description": "Updates the admin personal name, email, or contact phone."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Admin Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{adminPassword}}\",\n  \"newPassword\": \"Admin@654321\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "change-password"]
+            },
+            "description": "Changes the current admin password to a new one."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03. Regions",
+      "item": [
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get All Public Regions",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/regions",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["regions"]
+                },
+                "description": "Retrieves all published regions sorted by sortOrder."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Public Region by Slug",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/regions/{{regionSlug}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["regions", "{{regionSlug}}"]
+                },
+                "description": "Retrieves public region details by slug."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get All Admin Regions (List & Search)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/regions?search=&status=&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "regions"],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search by region name or slug"
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "description": "draft or published"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lists all regions with pagination and filter criteria."
+              },
+              "response": []
+            },
+            {
+              "name": "Create Region",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.success && jsonData.data) {",
+                      "    if (jsonData.data._id) {",
+                      "        pm.collectionVariables.set(\"regionId\", jsonData.data._id);",
+                      "        console.log(\"Saved regionId:\", jsonData.data._id);",
+                      "    }",
+                      "    if (jsonData.data.slug) {",
+                      "        pm.collectionVariables.set(\"regionSlug\", jsonData.data.slug);",
+                      "        console.log(\"Saved regionSlug:\", jsonData.data.slug);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"القاهرة الكبرى\",\n  \"slug\": \"greater-cairo\",\n  \"description\": \"أماكن وجلسات تصوير الأفراح في القاهرة والجيزة\",\n  \"coverImage\": \"https://images.unsplash.com/photo-1572252009286-268acec5ca0a\",\n  \"seoTitle\": \"أماكن تصوير بالقاهرة | مصطفى متولي\",\n  \"seoDescription\": \"أفضل مواقع تصوير الأعراس والفوتوسيشن في القاهرة\",\n  \"status\": \"published\",\n  \"sortOrder\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/regions",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "regions"]
+                },
+                "description": "Creates a new region. Automatically saves returned _id to {{regionId}} and slug to {{regionSlug}}."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Admin Region by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/regions/{{regionId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "regions", "{{regionId}}"]
+                },
+                "description": "Retrieves region details by its ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Region",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"القاهرة والجيزة\",\n  \"description\": \"تحديث وصف المنطقة مع إضافة مواقع جديدة\",\n  \"status\": \"published\",\n  \"sortOrder\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/regions/{{regionId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "regions", "{{regionId}}"]
+                },
+                "description": "Updates region properties by its ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Region",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/regions/{{regionId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "regions", "{{regionId}}"]
+                },
+                "description": "Deletes region by ID. (Note: returns 409 Conflict if locations are linked to this region)."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04. Locations",
+      "item": [
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get All Public Locations",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/locations?region=&featured=&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["locations"],
+                  "query": [
+                    {
+                      "key": "region",
+                      "value": "",
+                      "description": "Region slug or ID filter"
+                    },
+                    {
+                      "key": "featured",
+                      "value": "",
+                      "description": "true or false"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Retrieves public published locations with optional region or featured filters."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Public Location by Slug",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/locations/{{locationSlug}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["locations", "{{locationSlug}}"]
+                },
+                "description": "Retrieves published location details and populated region by slug."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Related Locations",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/locations/{{locationSlug}}/related",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["locations", "{{locationSlug}}", "related"]
+                },
+                "description": "Retrieves related locations by identifier (slug or MongoDB ID)."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get All Admin Locations (List & Filters)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/locations?search=&regionId=&status=&isFeatured=&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "locations"],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search in name or slug"
+                    },
+                    {
+                      "key": "regionId",
+                      "value": "{{regionId}}",
+                      "description": "Filter by region ID",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "description": "draft or published"
+                    },
+                    {
+                      "key": "isFeatured",
+                      "value": "",
+                      "description": "true or false"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lists all locations for admin with detailed pagination and status filters."
+              },
+              "response": []
+            },
+            {
+              "name": "Create Location",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.success && jsonData.data) {",
+                      "    if (jsonData.data._id) {",
+                      "        pm.collectionVariables.set(\"locationId\", jsonData.data._id);",
+                      "        console.log(\"Saved locationId:\", jsonData.data._id);",
+                      "    }",
+                      "    if (jsonData.data.slug) {",
+                      "        pm.collectionVariables.set(\"locationSlug\", jsonData.data.slug);",
+                      "        console.log(\"Saved locationSlug:\", jsonData.data.slug);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"regionId\": \"{{regionId}}\",\n  \"name\": \"قصر البارون إمبان\",\n  \"slug\": \"baron-empan-palace\",\n  \"shortDescription\": \"قصر تاريخي بطراز هندي مميز لتصوير جلسات زفاف راقية\",\n  \"description\": \"قصر تاريخي يقع في قلب مصر الجديدة، يوفر مساحات خارجية فريدة ومعماراً هندياً أثرياً مناسباً لصور الزفاف الملكية.\",\n  \"address\": \"شارع العروبة، مصر الجديدة، القاهرة\",\n  \"mapUrl\": \"https://maps.google.com/?q=Baron+Empan+Palace\",\n  \"coverImage\": \"https://images.unsplash.com/photo-1519741497674-611481863552\",\n  \"gallery\": [\n    {\n      \"publicId\": \"sample_baron_1\",\n      \"url\": \"https://images.unsplash.com/photo-1519741497674-611481863552\",\n      \"width\": 1920,\n      \"height\": 1080,\n      \"format\": \"jpg\",\n      \"bytes\": 245000,\n      \"alt\": \"صورة خارجية لقصر البارون\",\n      \"sortOrder\": 0\n    }\n  ],\n  \"photographyPrice\": {\n    \"type\": \"fixed\",\n    \"amount\": 3000\n  },\n  \"venuePrice\": {\n    \"type\": \"fixed\",\n    \"amount\": 1500\n  },\n  \"showTotal\": true,\n  \"isFeatured\": true,\n  \"status\": \"published\",\n  \"sortOrder\": 1,\n  \"seoTitle\": \"جلسات تصوير في قصر البارون | مصطفى متولي\",\n  \"seoDescription\": \"احجز جلسة تصوير زفافك في قصر البارون بأفضل الأسعار\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/locations",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "locations"]
+                },
+                "description": "Creates a new location. Requires a valid {{regionId}}. Automatically sets {{locationId}} and {{locationSlug}} upon creation."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Admin Location by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/locations/{{locationId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "locations", "{{locationId}}"]
+                },
+                "description": "Retrieves complete location details for admin by location ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Location",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"shortDescription\": \"قصر تاريخي متميز ومحدث لتصوير جلسات زفاف استثنائية\",\n  \"photographyPrice\": {\n    \"type\": \"fixed\",\n    \"amount\": 3500\n  },\n  \"isFeatured\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/locations/{{locationId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "locations", "{{locationId}}"]
+                },
+                "description": "Updates location details by its ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Gallery Order",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"gallery\": [\n    {\n      \"publicId\": \"sample_baron_1\",\n      \"url\": \"https://images.unsplash.com/photo-1519741497674-611481863552\",\n      \"width\": 1920,\n      \"height\": 1080,\n      \"format\": \"jpg\",\n      \"bytes\": 245000,\n      \"alt\": \"صورة معدلة لقصر البارون\",\n      \"sortOrder\": 1\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/locations/{{locationId}}/gallery-order",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "locations", "{{locationId}}", "gallery-order"]
+                },
+                "description": "Updates the ordering or items in a location's image gallery."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Location",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/locations/{{locationId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "locations", "{{locationId}}"]
+                },
+                "description": "Deletes a location by its ID."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05. Services",
+      "item": [
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get All Public Services",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/services?homepage=&locationId=&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["services"],
+                  "query": [
+                    {
+                      "key": "homepage",
+                      "value": "",
+                      "description": "Set to true to get only homepage visible services"
+                    },
+                    {
+                      "key": "locationId",
+                      "value": "{{locationId}}",
+                      "description": "Filter services linked to a location",
+                      "disabled": true
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Retrieves public published services."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Public Service by Slug",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/services/{{serviceSlug}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["services", "{{serviceSlug}}"]
+                },
+                "description": "Retrieves public service details by slug."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get All Admin Services (List & Filters)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/services?search=&status=&isActive=&page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "services"],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "",
+                      "description": "Search by service name or slug"
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "description": "draft or published"
+                    },
+                    {
+                      "key": "isActive",
+                      "value": "",
+                      "description": "true or false"
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                },
+                "description": "Lists all services for admin with filters and pagination."
+              },
+              "response": []
+            },
+            {
+              "name": "Create Service",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var jsonData = pm.response.json();",
+                      "if (jsonData.success && jsonData.data) {",
+                      "    if (jsonData.data._id) {",
+                      "        pm.collectionVariables.set(\"serviceId\", jsonData.data._id);",
+                      "        console.log(\"Saved serviceId:\", jsonData.data._id);",
+                      "    }",
+                      "    if (jsonData.data.slug) {",
+                      "        pm.collectionVariables.set(\"serviceSlug\", jsonData.data.slug);",
+                      "        console.log(\"Saved serviceSlug:\", jsonData.data.slug);",
+                      "    }",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"باقة الزفاف الكاملة (Full Day)\",\n  \"slug\": \"full-day-wedding-package\",\n  \"shortDescription\": \"تغطية شاملة ليوم الزفاف من الاستعداد حتى نهاية الحفل\",\n  \"description\": \"تغطية تصوير فوتوغرافي كاملة تشمل جلسة التحضيرات، فوتوسيشن خارجي للعروسين، وتغطية مراسم الحفل كاملة مع تسليم ألبوم عالي الجودة.\",\n  \"mainImage\": \"https://images.unsplash.com/photo-1519741497674-611481863552\",\n  \"price\": {\n    \"type\": \"starting_from\",\n    \"amount\": 8000\n  },\n  \"variants\": [\n    {\n      \"name\": \"باقة كلاسيكية\",\n      \"description\": \"تغطية فوتوغرافية مع ألبوم مطبوع\",\n      \"price\": {\n        \"type\": \"fixed\",\n        \"amount\": 6500\n      }\n    },\n    {\n      \"name\": \"باقة VIP سينمائية\",\n      \"description\": \"تصوير فوتو وفيديو احترافي مع لقطات درون وألبومين\",\n      \"price\": {\n        \"type\": \"fixed\",\n        \"amount\": 12000\n      }\n    }\n  ],\n  \"visibility\": {\n    \"homepage\": true,\n    \"servicesPage\": true,\n    \"allLocations\": true\n  },\n  \"isFeatured\": true,\n  \"isActive\": true,\n  \"status\": \"published\",\n  \"sortOrder\": 1,\n  \"seoTitle\": \"باقات تصوير أفراح متكاملة | مصطفى متولي\",\n  \"seoDescription\": \"احجز باقة تصوير الزفاف الكاملة بأحدث المعدات وأفضل جودة\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/services",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "services"]
+                },
+                "description": "Creates a new photography service. Automatically populates {{serviceId}} and {{serviceSlug}}."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Admin Service by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/services/{{serviceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "services", "{{serviceId}}"]
+                },
+                "description": "Retrieves service details by its ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Service",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"shortDescription\": \"تغطية شاملة ومتميزة ليوم الزفاف بالكامل بأحدث المعدات\",\n  \"price\": {\n    \"type\": \"starting_from\",\n    \"amount\": 8500\n  },\n  \"isActive\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/services/{{serviceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "services", "{{serviceId}}"]
+                },
+                "description": "Updates service fields by ID."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Service",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/services/{{serviceId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "services", "{{serviceId}}"]
+                },
+                "description": "Deletes a service by its ID."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06. Site Settings & Homepage",
+      "item": [
+        {
+          "name": "Public",
+          "item": [
+            {
+              "name": "Get Public Site Settings",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/settings/public",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["settings", "public"]
+                },
+                "description": "Retrieves public settings including branding, contact, hero, and SEO configurations."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Public Homepage Data",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/homepage",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["homepage"]
+                },
+                "description": "Returns aggregated homepage data: sections, hero, featured regions, featured locations, featured services, and portfolio."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Admin",
+          "item": [
+            {
+              "name": "Get Admin Settings",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "settings"]
+                },
+                "description": "Retrieves complete site settings schema for admin management."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Admin Settings",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"photographerName\": \"مصطفى متولي\",\n  \"currencyLabel\": \"جنيه\",\n  \"contact\": {\n    \"phone\": \"01000000000\",\n    \"whatsappNumber\": \"201000000000\",\n    \"defaultWhatsappMessage\": \"مرحباً أود الاستفسار عن باقات وأماكن تصوير الزفاف.\",\n    \"email\": \"info@mostafametwaly.com\",\n    \"instagram\": \"https://instagram.com/mostafametwaly\",\n    \"facebook\": \"https://facebook.com/mostafametwaly\"\n  },\n  \"hero\": {\n    \"title\": \"توثيق أجمل لحظات العمر بلمسة فنية مميزة\",\n    \"description\": \"متخصصون في تصوير حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.\",\n    \"primaryCtaText\": \"استكشف أماكن التصوير\",\n    \"primaryCtaUrl\": \"/locations\",\n    \"secondaryCtaText\": \"تواصل عبر واتساب\",\n    \"secondaryCtaUrl\": \"https://wa.me/201000000000\"\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "settings"]
+                },
+                "description": "Updates general site settings, contact info, hero, and SEO parameters."
+              },
+              "response": []
+            },
+            {
+              "name": "Get Admin Homepage Config",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/homepage",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "homepage"]
+                },
+                "description": "Retrieves homepage section configs, order, and curated featured IDs."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Admin Homepage Config",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"homepageSections\": [\n    { \"id\": \"hero\", \"enabled\": true, \"order\": 1, \"title\": \"القسم الرئيسي\" },\n    { \"id\": \"about\", \"enabled\": true, \"order\": 2, \"title\": \"عن المصور\" },\n    { \"id\": \"featured_regions\", \"enabled\": true, \"order\": 3, \"title\": \"أبرز المناطق\" },\n    { \"id\": \"featured_locations\", \"enabled\": true, \"order\": 4, \"title\": \"أماكن مختارة للتصوير\" },\n    { \"id\": \"portfolio\", \"enabled\": true, \"order\": 5, \"title\": \"معرض الأعمال\" },\n    { \"id\": \"services\", \"enabled\": true, \"order\": 6, \"title\": \"خدمات إضافية\" },\n    { \"id\": \"how_it_works\", \"enabled\": true, \"order\": 7, \"title\": \"كيف نعمل\" },\n    { \"id\": \"contact\", \"enabled\": true, \"order\": 8, \"title\": \"تواصل معنا\" }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/homepage",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "homepage"]
+                },
+                "description": "Updates homepage sections visibility, order, titles, and curated featured IDs."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07. Image Uploads",
+      "item": [
+        {
+          "name": "Upload Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data && jsonData.data.publicId) {",
+                  "    pm.collectionVariables.set(\"uploadPublicId\", jsonData.data.publicId);",
+                  "    console.log(\"Saved uploadPublicId:\", jsonData.data.publicId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "Choose an image file (PNG, JPG, WebP - max 10MB)"
+                },
+                {
+                  "key": "folder",
+                  "value": "wedding_portfolio",
+                  "type": "text",
+                  "description": "Cloudinary folder name (e.g. wedding_portfolio, locations, regions)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/uploads",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "uploads"]
+            },
+            "description": "Uploads an image to Cloudinary. Saves the returned publicId into {{uploadPublicId}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Uploaded Image",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/uploads/{{uploadPublicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "uploads", "{{uploadPublicId}}"]
+            },
+            "description": "Deletes an uploaded image from Cloudinary using its publicId variable {{uploadPublicId}}."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

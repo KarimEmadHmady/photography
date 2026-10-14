@@ -1,0 +1,878 @@
+{
+  "_instructions": "AGENTS MAY ONLY MODIFY 'passes' AND 'notes'. Never delete, reword or reorder features or steps. Set passes=true only after end-to-end verification. Work in priority/phase order.",
+  "features": [
+    {
+      "id": "F001",
+      "category": "setup",
+      "phase": 1,
+      "priority": "high",
+      "description": "Repository inspected; architecture documented (existing code preserved if any)",
+      "steps": [
+        "Inspect repo, framework versions, structure",
+        "Write findings + final folder structure to claude-progress.md",
+        "Confirm monorepo layout (apps/web, apps/api) or adapt to existing"
+      ],
+      "passes": true,
+      "notes": "Inspected existing frontend/backend structure and package versions; documented findings and selected apps/api + apps/web workspace migration in claude-progress.md. init.sh --check now finds Node on WSL/Windows via a node.exe shim."
+    },
+    {
+      "id": "F002",
+      "category": "setup",
+      "phase": 1,
+      "priority": "high",
+      "description": "Monorepo scaffolded with working dev scripts for both apps",
+      "steps": [
+        "Run npm install at root",
+        "npm run dev -w apps/api starts on port 4000",
+        "npm run dev -w apps/web starts on port 3000"
+      ],
+      "passes": true,
+      "notes": "Root npm workspaces created. Moved Next app to apps/web. Replaced the non-runnable MySQL training template with a TypeScript Express app at apps/api. npm install at root succeeded; npm run dev -w apps/api listened on 4000; npm run dev -w apps/web Ready on 3000 (GET / follows 307 to /en 200)."
+    },
+    {
+      "id": "F003",
+      "category": "setup",
+      "phase": 2,
+      "priority": "high",
+      "description": "Environment validation with .env.example for both apps",
+      "steps": [
+        "Remove a required var -> API fails fast with clear message",
+        "apps/api/.env.example and apps/web/.env.example exist with placeholders only",
+        "No secrets use NEXT_PUBLIC_ prefix"
+      ],
+      "passes": true,
+      "notes": "apps/api/.env.example and apps/web/.env.example exist with placeholders only. Web exposes only NEXT_PUBLIC_API_BASE_URL. Removing JWT_SECRET (vitest tests/env.test.ts) throws a clear Arabic env error listing JWT_SECRET."
+    },
+    {
+      "id": "F004",
+      "category": "backend",
+      "phase": 2,
+      "priority": "high",
+      "description": "Express app with Helmet, CORS (credentials), body limits, centralized error handler, health endpoint",
+      "steps": [
+        "GET /api/v1/health returns 200",
+        "Security headers present",
+        "Throwing in a route returns safe JSON error with no stack in production"
+      ],
+      "passes": true,
+      "notes": "GET http://localhost:4000/api/v1/health -> 200 {success:true,data:{status:ok}} with Helmet headers (CSP, X-Content-Type-Options nosniff) and CORS credentials for FRONTEND_ORIGIN. JSON body limit 1mb. Vitest error.test.ts: production throw -> 500 Arabic INTERNAL_ERROR, no stack, no internal message."
+    },
+    {
+      "id": "F005",
+      "category": "backend",
+      "phase": 2,
+      "priority": "high",
+      "description": "MongoDB connection + Mongoose models (Admin, Region, Location, Service, SiteSettings) with indexes",
+      "steps": [
+        "Models load without error",
+        "Unique slug indexes exist",
+        "Duplicate slug insert is rejected"
+      ],
+      "passes": true,
+      "notes": "Implemented all 5 Mongoose models (Admin, Region, Location, Service, SiteSettings) with proper schemas, timestamps, unique slug constraints, and indexes. Database connection module supports in-memory MongoDB for tests via mongodb-memory-server, fails fast with clear error if MONGODB_URI missing in non-test environments. SiteSettings uses unique 'key' field (default 'main') for singleton enforcement. 24 model tests pass: validation, duplicate slugs (with Model.init()), price constraints, gallery metadata, visibility flags, SiteSettings singleton/upsert. Typecheck passes. Tests use isolated in-memory DB without requiring real MongoDB credentials."
+    },
+    {
+      "id": "F006",
+      "category": "backend",
+      "phase": 2,
+      "priority": "high",
+      "description": "Zod validation middleware and consistent {success,data|error} response format",
+      "steps": [
+        "Invalid body returns 400 with Arabic message and details",
+        "Valid body passes through",
+        "NoSQL operator payload ({\"$gt\":\"\"}) is rejected/sanitized"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F007",
+      "category": "auth",
+      "phase": 2,
+      "priority": "high",
+      "description": "Admin creation script (create-admin) and password rotation script; no public registration route",
+      "steps": [
+        "Run create-admin creates one admin with hashed password",
+        "No POST /register route exists",
+        "Rotation script changes password and old one fails"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F008",
+      "category": "auth",
+      "phase": 2,
+      "priority": "high",
+      "description": "POST /auth/login sets HttpOnly cookie; GET /auth/me; POST /auth/logout",
+      "steps": [
+        "Correct credentials -> 200 + HttpOnly cookie",
+        "Wrong credentials -> 401 generic message",
+        "/auth/me returns admin when cookie valid, 401 otherwise",
+        "Logout clears cookie"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F009",
+      "category": "auth",
+      "phase": 2,
+      "priority": "high",
+      "description": "Rate limiting and brute-force protection on login",
+      "steps": [
+        "Exceed attempts -> 429",
+        "Limit does not affect public GET routes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F010",
+      "category": "auth",
+      "phase": 2,
+      "priority": "high",
+      "description": "CSRF protection for state-changing admin requests",
+      "steps": [
+        "PATCH without CSRF token -> 403",
+        "With valid token -> succeeds"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F011",
+      "category": "auth",
+      "phase": 2,
+      "priority": "high",
+      "description": "All /admin/* API routes require authentication",
+      "steps": [
+        "Unauthenticated GET/POST/PATCH/DELETE on every admin route -> 401",
+        "Automated test iterates all admin routes"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F012",
+      "category": "regions",
+      "phase": 2,
+      "priority": "high",
+      "description": "Admin Region CRUD API with validation and unique slug",
+      "steps": [
+        "POST creates region",
+        "Duplicate slug -> 409",
+        "PATCH updates",
+        "GET list/detail work with search and status filter"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F013",
+      "category": "regions",
+      "phase": 2,
+      "priority": "high",
+      "description": "Region delete is blocked when locations reference it",
+      "steps": [
+        "Create region + location",
+        "DELETE region -> 409 with count and names",
+        "Delete location then region -> 200"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F014",
+      "category": "regions",
+      "phase": 2,
+      "priority": "high",
+      "description": "Public Region endpoints return only published regions ordered by sortOrder",
+      "steps": [
+        "Draft region absent from GET /regions",
+        "GET /regions/:slug of draft -> 404",
+        "Response includes published location count"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F015",
+      "category": "locations",
+      "phase": 2,
+      "priority": "high",
+      "description": "Admin Location CRUD API with required valid regionId",
+      "steps": [
+        "Create with valid regionId -> 201",
+        "Invalid/missing regionId -> 400",
+        "Duplicate slug -> 409"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F016",
+      "category": "locations",
+      "phase": 2,
+      "priority": "high",
+      "description": "Price schema validation (amount + type) for photography and venue prices",
+      "steps": [
+        "on_request with amount -> 400",
+        "fixed with amount <= 0 or null -> 400",
+        "Both prices stored independently"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F017",
+      "category": "locations",
+      "phase": 2,
+      "priority": "high",
+      "description": "Public Location endpoints: published only, region must be published, filter by region, pagination, deterministic sort",
+      "steps": [
+        "Draft location hidden",
+        "Location in draft region hidden",
+        "?region=slug filters",
+        "Pagination meta correct"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F018",
+      "category": "locations",
+      "phase": 2,
+      "priority": "high",
+      "description": "Related locations endpoint (admin-selected or same-region fallback)",
+      "steps": [
+        "Returns admin-selected when set",
+        "Falls back to same region excluding self and drafts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F019",
+      "category": "locations",
+      "phase": 2,
+      "priority": "high",
+      "description": "Computed total price only when both prices known and showTotal enabled",
+      "steps": [
+        "Both fixed + showTotal -> total present",
+        "One on_request -> total absent",
+        "showTotal false -> absent"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F020",
+      "category": "services",
+      "phase": 2,
+      "priority": "high",
+      "description": "Admin Service CRUD API with price, visibility and locationIds",
+      "steps": [
+        "Create/edit/delete works",
+        "Invalid locationIds rejected",
+        "Slug unique"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F021",
+      "category": "services",
+      "phase": 2,
+      "priority": "high",
+      "description": "Public service endpoints respect status, isActive and visibility; location pages include linked + all-locations services",
+      "steps": [
+        "Draft/inactive hidden",
+        "Service linked to location A not shown on B",
+        "allLocations service shows everywhere"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F022",
+      "category": "settings",
+      "phase": 2,
+      "priority": "high",
+      "description": "SiteSettings singleton with GET/PATCH admin endpoints and public subset endpoint",
+      "steps": [
+        "First GET creates defaults",
+        "PATCH validates phone/URL formats",
+        "Public endpoint excludes private fields"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F023",
+      "category": "settings",
+      "phase": 2,
+      "priority": "high",
+      "description": "Homepage config endpoints: sections enabled/order, featured regions/locations/services, portfolio references",
+      "steps": [
+        "Invalid referenced IDs rejected",
+        "Dangling/deleted references are skipped on public read",
+        "Section order persists"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F024",
+      "category": "uploads",
+      "phase": 3,
+      "priority": "high",
+      "description": "Cloudinary configured backend-only; signed upload (or mediated upload) with MIME/size/count validation",
+      "steps": [
+        "Unauthenticated sign request -> 401",
+        "Non-image file rejected",
+        "Oversize file rejected",
+        "Valid image upload returns publicId, url, width, height"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F025",
+      "category": "uploads",
+      "phase": 3,
+      "priority": "high",
+      "description": "Image metadata stored in MongoDB (publicId, url, width, height, alt, sortOrder)",
+      "steps": [
+        "Saved location contains gallery metadata",
+        "Public API returns optimized URL helpers"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F026",
+      "category": "uploads",
+      "phase": 3,
+      "priority": "high",
+      "description": "Safe image deletion: only after DB success and only if not referenced elsewhere",
+      "steps": [
+        "Delete image referenced by another doc -> Cloudinary asset kept",
+        "Unreferenced -> deleted",
+        "Failed DB write cleans up new uploads"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F027",
+      "category": "uploads",
+      "phase": 3,
+      "priority": "high",
+      "description": "Gallery order endpoint and cover selection",
+      "steps": [
+        "PATCH order persists new sequence",
+        "Setting cover to a gallery image works without duplicate upload"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F028",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Root layout: lang=ar dir=rtl, Arabic font via next/font, Tailwind theme (ivory/charcoal/champagne)",
+      "steps": [
+        "View-source shows lang=ar dir=rtl",
+        "Body font size >= 16px",
+        "Logical spacing utilities used"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F029",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Header with nav, WhatsApp button and accessible mobile menu; footer with links/contact/social",
+      "steps": [
+        "Desktop nav links work",
+        "Mobile menu opens/closes with keyboard and Escape",
+        "WhatsApp link uses wa.me with encoded default message"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F030",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Homepage renders sections from SiteSettings respecting enabled flags and order",
+      "steps": [
+        "Disable a section in DB -> hidden",
+        "Reorder -> render order changes",
+        "No hardcoded demo content in components"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F031",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Hero section with editable title, description, image and two CTAs",
+      "steps": [
+        "Content comes from settings",
+        "Hero image is the only priority image",
+        "CTAs link to configured destinations"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F032",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "About, Featured Regions, Featured Locations, Portfolio, Services, How It Works, Contact sections",
+      "steps": [
+        "Each renders from API data",
+        "Empty state hides section gracefully",
+        "How It Works never implies online booking"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F033",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Regions listing page (/regions) with image cards",
+      "steps": [
+        "Only published regions",
+        "Card links to /regions/[slug]",
+        "Empty state when none"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F034",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Region details page lists its published locations",
+      "steps": [
+        "Breadcrumb correct",
+        "Locations belong to this region only",
+        "404 for unknown/draft slug"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F035",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Locations listing page with region filter and sorting",
+      "steps": [
+        "Filter by region works",
+        "Sorting options work and persist in URL",
+        "Pagination works"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F036",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Location details page with breadcrumb, hero, description, address, map link, separate prices, optional total",
+      "steps": [
+        "Photography and venue prices displayed separately",
+        "on_request shows «السعر حسب الاتفاق» not 0",
+        "Map link shown only if set"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F037",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Responsive gallery with lightbox (keyboard, swipe, focus trap, Escape)",
+      "steps": [
+        "Grid responsive 1-2-3 columns",
+        "Lightbox next/prev works by arrows and swipe",
+        "Non-priority images lazy-loaded",
+        "No layout shift"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F038",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Location contact CTAs: WhatsApp (with location name in message) and phone tel: links",
+      "steps": [
+        "WhatsApp URL correct and encoded",
+        "tel: link correct E.164",
+        "Buttons sticky/visible on mobile"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F039",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Related locations and linked services sections on location page",
+      "steps": [
+        "Related shows same-region or admin-selected",
+        "Services show only linked/allLocations"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F040",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Services page and service details page",
+      "steps": [
+        "Lists published services",
+        "Detail page shows gallery, price, video link if set",
+        "Dynamic from API"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F041",
+      "category": "public-ui",
+      "phase": 4,
+      "priority": "high",
+      "description": "Loading skeletons, error boundaries, not-found pages in Arabic",
+      "steps": [
+        "Throttled network shows skeleton",
+        "API down shows friendly Arabic error",
+        "Unknown slug -> custom 404"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F042",
+      "category": "seo",
+      "phase": 4,
+      "priority": "high",
+      "description": "generateMetadata for home, region, location, service pages (title, description, canonical, Open Graph, image)",
+      "steps": [
+        "View-source shows unique meta per page",
+        "Canonical URL correct",
+        "OG image present"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F043",
+      "category": "seo",
+      "phase": 4,
+      "priority": "high",
+      "description": "sitemap.xml and robots.txt include only published content",
+      "steps": [
+        "Draft excluded",
+        "New published location appears after revalidation"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F044",
+      "category": "seo",
+      "phase": 4,
+      "priority": "high",
+      "description": "On-demand revalidation after admin changes (secret-protected)",
+      "steps": [
+        "Edit location title in admin -> public page updates without restart",
+        "Unpublish -> page 404 and removed from sitemap",
+        "Revalidation endpoint rejects wrong secret"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F045",
+      "category": "perf",
+      "phase": 4,
+      "priority": "high",
+      "description": "Cloudinary-optimized responsive images (f_auto,q_auto,srcset) with explicit dimensions",
+      "steps": [
+        "Network shows resized modern formats",
+        "Lighthouse CLS < 0.1 on home and location page"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F046",
+      "category": "perf",
+      "phase": 6,
+      "priority": "high",
+      "description": "Mobile performance and accessibility pass",
+      "steps": [
+        "Lighthouse mobile performance >= 85 on home and location pages (report actual numbers)",
+        "Accessibility >= 95",
+        "Keyboard navigation and focus visible everywhere"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F047",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Admin login page and route protection (middleware/guard + server check)",
+      "steps": [
+        "Unauthenticated /admin redirects to /admin/login",
+        "Wrong password shows Arabic error",
+        "Session expiry redirects with message"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F048",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Admin layout: RTL sidebar, breadcrumbs, toasts, confirm dialog, responsive",
+      "steps": [
+        "All sections reachable from sidebar",
+        "Works on tablet width",
+        "Destructive actions open confirm dialog"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F049",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Dashboard overview cards (regions, locations, published, drafts, active services) + recent updates",
+      "steps": [
+        "Numbers match DB",
+        "Quick actions link correctly"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F050",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Region management UI: list, create, edit, delete, cover upload, reorder, publish toggle, location count",
+      "steps": [
+        "Create region with cover",
+        "Delete region with locations shows blocking message",
+        "Reorder persists"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F051",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Location management UI: form with region select, details, address, map link, two prices + types, status, featured, SEO",
+      "steps": [
+        "Region select clearly separate from name",
+        "Zod errors shown in Arabic",
+        "Save draft and publish both work"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F052",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Gallery manager: multi-upload with progress, DnD reorder (mouse/touch/keyboard), set cover, edit alt text, replace, delete",
+      "steps": [
+        "Upload 5 images",
+        "Reorder and reload -> order persisted",
+        "Delete image removes from Cloudinary only if unreferenced"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F053",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Location related-services picker and preview of public page (including drafts)",
+      "steps": [
+        "Select services -> appear on public page",
+        "Preview opens draft via protected preview mode"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F054",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Service management UI: CRUD, images, price, variants, visibility, location association, status, order, preview",
+      "steps": [
+        "Create service visible on chosen locations only",
+        "Homepage flag works"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F055",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Homepage management UI: hero, about, section toggles/order, featured selectors, portfolio picker, titles, contact",
+      "steps": [
+        "Edit hero title -> public home updates",
+        "Toggle section off -> hidden",
+        "Portfolio picker references existing gallery images"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F056",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "General settings UI with phone/URL validation, WhatsApp default message, currency label, SEO defaults, logo/favicon, footer",
+      "steps": [
+        "Invalid phone rejected",
+        "Currency label appears on prices",
+        "Logo shows in header"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F057",
+      "category": "admin-ui",
+      "phase": 5,
+      "priority": "high",
+      "description": "Search, filters, pagination and empty/error/loading states across admin lists",
+      "steps": [
+        "Search by name works",
+        "Pagination works with 25+ items",
+        "Empty state shown"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F058",
+      "category": "testing",
+      "phase": 6,
+      "priority": "high",
+      "description": "Backend automated tests: auth, unauthorized access, region/location validation, slug uniqueness, visibility, pricing, service visibility, region deletion constraint, settings validation",
+      "steps": [
+        "Run ./init.sh --test",
+        "All listed areas covered",
+        "Report real pass/fail counts"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F059",
+      "category": "testing",
+      "phase": 6,
+      "priority": "high",
+      "description": "E2E public journey (Playwright): Home -> Regions -> Region -> Location -> Gallery -> WhatsApp/phone",
+      "steps": [
+        "Playwright test passes",
+        "Runs on desktop and mobile viewport"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F060",
+      "category": "testing",
+      "phase": 6,
+      "priority": "high",
+      "description": "E2E admin journey (Playwright): login -> create region -> create location -> upload -> prices -> preview -> publish -> verify public -> edit -> delete safely",
+      "steps": [
+        "Playwright test passes",
+        "Uses test Cloudinary folder or mock with cleanup"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F061",
+      "category": "release",
+      "phase": 6,
+      "priority": "high",
+      "description": "Lint, typecheck and production build pass for both apps",
+      "steps": [
+        "Run ./init.sh --build",
+        "Zero errors",
+        "Report actual output"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F062",
+      "category": "release",
+      "phase": 6,
+      "priority": "high",
+      "description": "Documentation: README with setup, admin creation/rotation, MongoDB, Cloudinary, env vars, testing, deployment, how to use dashboard",
+      "steps": [
+        "Fresh clone setup works following README only",
+        "All env vars documented"
+      ],
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "F063",
+      "category": "release",
+      "phase": 6,
+      "priority": "high",
+      "description": "Final acceptance review against app_spec.xml acceptance_criteria",
+      "steps": [
+        "Walk through each criterion",
+        "No placeholders remain",
+        "No hardcoded example data",
+        "Out-of-scope features absent"
+      ],
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen flex bg-neutral-100 text-neutral-900" dir="rtl">
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <main className="p-6 sm:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <main className="p-6 sm:p-8 max-w-7xl w-full mx-auto mt-10 sm:mt-0">{children}</main>
       </div>
     </div>
   );

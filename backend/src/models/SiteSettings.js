@@ -79,6 +79,10 @@ const siteSettingsSchema = new Schema(
         type: String,
         default: '',
       },
+      images: {
+        type: [String],
+        default: [],
+      },
       primaryCtaText: {
         type: String,
         required: true,

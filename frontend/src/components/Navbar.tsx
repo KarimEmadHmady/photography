@@ -3,9 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Camera, Menu, X, Phone, MessageCircle, Shield } from 'lucide-react';
+import { Camera, Menu, X, MessageCircle, Shield } from 'lucide-react';
 import { api } from '../lib/api';
 import { ISiteSettings } from '../types';
+
+const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,12 +16,20 @@ export default function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
-    api.public.getSettings().then((res) => {
-      if (res.success && res.data) {
-        setSettings(res.data);
-      }
-    }).catch(() => {});
+    api.public
+      .getSettings()
+      .then((res) => {
+        if (res.success && res.data) {
+          setSettings(res.data);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  // Close the mobile menu whenever the route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
   // Do not show public navbar on admin pages
   if (pathname.startsWith('/admin')) {
@@ -32,113 +43,110 @@ export default function Navbar() {
     { name: 'الخدمات', href: '/services' },
   ];
 
+  const isActive = (href: string) =>
+    pathname === href || (href !== '/' && pathname.startsWith(href));
+
   const whatsappUrl = settings?.contact?.whatsappNumber
-    ? `https://wa.me/${settings.contact.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(settings.contact.defaultWhatsappMessage || '')}`
+    ? `https://wa.me/${settings.contact.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+        settings.contact.defaultWhatsappMessage || ''
+      )}`
     : 'https://wa.me/';
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-xs">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo / Photographer Name */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 group-hover:bg-amber-100 transition">
-              <Camera className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-xl tracking-tight text-gray-900 block">
-                {settings?.photographerName || 'مصور فوتوغرافي'}
-              </span>
-              <span className="text-xs text-amber-700 block font-medium">جلسات تصوير وأفراح</span>
-            </div>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`text-sm font-medium transition ${
-                    isActive ? 'text-amber-700 font-semibold border-b-2 border-amber-600 pb-1' : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Action Buttons */}
-          <div className="hidden md:flex items-center gap-3">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition shadow-xs"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>واتساب</span>
-            </a>
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-50 text-xs transition"
-              title="لوحة الإدارة"
-            >
-              <Shield className="w-4 h-4" />
-              <span>لوحة التحكم</span>
-            </Link>
+    <header
+      className={`fixed top-0 inset-x-3 sm:inset-x-6 mt-3 sm:mt-4 max-w-6xl mx-auto z-50 bg-white/70 backdrop-blur-xl backdrop-saturate-150 border border-white/30 shadow-lg shadow-black/10 transition-[border-radius] ${
+        isOpen ? 'rounded-3xl' : 'rounded-full'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2 h-14 sm:h-16 pe-3 ps-2.5 sm:pe-5 sm:ps-3">
+        {/* Logo / Photographer Name */}
+        <Link
+          href="/"
+          className={`flex items-center gap-2.5 group min-w-0 rounded-full ${focusRing}`}
+        >
+          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full bg-neutral-900 flex items-center justify-center text-amber-400 group-hover:bg-amber-600 group-hover:text-white transition">
+            <Camera className="w-[18px] h-[18px]" />
           </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              aria-label="القائمة"
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          <div className="leading-tight min-w-0">
+            <span className="font-bold text-sm sm:text-base text-neutral-900 block truncate">
+              {settings?.photographerName || 'مصور فوتوغرافي'}
+            </span>
+            <span className="text-[10px] sm:text-xs text-amber-700 block font-medium truncate">
+              جلسات تصوير وأفراح
+            </span>
           </div>
-        </div>
-      </div>
+        </Link>
 
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-3 pb-6 space-y-3">
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setIsOpen(false)}
-              className={`block px-3 py-2 rounded-md text-base font-medium ${
-                pathname === link.href ? 'bg-amber-50 text-amber-800' : 'text-gray-700 hover:bg-gray-50'
+              className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition ${focusRing} ${
+                isActive(link.href)
+                  ? 'text-amber-700 bg-amber-50 font-semibold'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
               }`}
             >
               {link.name}
             </Link>
           ))}
-          <div className="pt-4 border-t border-gray-100 flex flex-col gap-2">
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 text-white font-medium text-sm"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>تواصل عبر واتساب</span>
-            </a>
+        </nav>
+
+        {/* Desktop actions */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-600 text-white text-[13px] font-semibold hover:bg-amber-700 shadow-sm transition ${focusRing}`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>واتساب</span>
+          </a>
+
+        </div>
+
+        {/* Mobile actions */}
+        <div className="md:hidden flex items-center gap-1.5 shrink-0">
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="واتساب"
+            className={`w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center hover:bg-amber-700 transition ${focusRing}`}
+          >
+            <MessageCircle className="w-[18px] h-[18px]" />
+          </a>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-neutral-800 hover:bg-neutral-900/5 transition ${focusRing}`}
+            aria-label="القائمة"
+            aria-expanded={isOpen}
+          >
+            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isOpen && (
+        <div className="md:hidden border-t border-neutral-900/10 px-3 pt-2 pb-3 space-y-1">
+          {navLinks.map((link) => (
             <Link
-              href="/admin"
-              onClick={() => setIsOpen(false)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 text-sm font-medium"
+              key={link.href}
+              href={link.href}
+              className={`block px-4 py-2.5 rounded-2xl text-sm font-medium transition ${
+                isActive(link.href)
+                  ? 'bg-amber-50 text-amber-700 font-semibold'
+                  : 'text-neutral-700 hover:bg-neutral-900/5'
+              }`}
             >
-              <Shield className="w-4 h-4" />
-              <span>لوحة تحكم المشرف</span>
+              {link.name}
             </Link>
-          </div>
+          ))}
+
         </div>
       )}
     </header>

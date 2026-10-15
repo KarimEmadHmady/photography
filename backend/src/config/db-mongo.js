@@ -16,7 +16,7 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       // dbName: 'q-gym',
       // Connection pool settings for better performance
-      maxPoolSize: 50, // Maximum number of sockets in the connection pool
+      maxPoolSize: 60, // Maximum number of sockets in the connection pool
       minPoolSize: 5,  // Minimum number of sockets in the connection pool
       maxIdleTimeMS: 30000, // How long a connection can be idle before being closed
       serverSelectionTimeoutMS: 5000, // How long to try selecting a server before giving up

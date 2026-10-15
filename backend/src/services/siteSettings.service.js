@@ -15,6 +15,7 @@ export class SiteSettingsService {
           title: 'توثيق أجمل لحظات العمر بلمسة فنية مميزة',
           description: 'متخصصون في تصوير حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
           imageUrl: '',
+          images: [],
           primaryCtaText: 'استكشف أماكن التصوير',
           primaryCtaUrl: '/locations',
           secondaryCtaText: 'تواصل عبر واتساب',
@@ -185,10 +186,20 @@ export class SiteSettingsService {
     if (data.currencyLabel !== undefined) settings.currencyLabel = data.currencyLabel.trim();
 
     if (data.hero) {
+      const heroPayload = { ...data.hero };
+      if (Array.isArray(heroPayload.images)) {
+        heroPayload.images = heroPayload.images.filter(Boolean);
+        if (heroPayload.images.length > 0 && !heroPayload.imageUrl) {
+          heroPayload.imageUrl = heroPayload.images[0];
+        }
+      }
       settings.hero = {
         ...settings.hero.toObject(),
-        ...data.hero,
+        ...heroPayload,
       };
+      if (Array.isArray(heroPayload.images)) {
+        settings.hero.images = heroPayload.images;
+      }
     }
 
     if (data.about) {

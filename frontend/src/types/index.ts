@@ -111,7 +111,8 @@ export interface ISiteSettings {
   hero: {
     title: string;
     description: string;
-    imageUrl: string;
+    imageUrl?: string;
+    images?: string[];
     primaryCtaText: string;
     primaryCtaUrl: string;
     secondaryCtaText: string;

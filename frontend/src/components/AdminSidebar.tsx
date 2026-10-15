@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Menu,
   X,
+  User,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { AdminInstallButton } from './AdminPWA';
@@ -25,6 +26,7 @@ const menuItems = [
   { name: 'الخدمات الإضافية', href: '/admin/services', icon: Layers },
   { name: 'الصفحة الرئيسية', href: '/admin/homepage', icon: Home },
   { name: 'إعدادات الموقع', href: '/admin/settings', icon: Settings },
+  { name: 'البيانات الشخصية', href: '/admin/profile', icon: User },
 ];
 
 const focusRing =
@@ -85,12 +87,17 @@ export default function AdminSidebar() {
     <>
       {/* شريط علوي — موبايل فقط */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-40 h-14 bg-neutral-900 border-b border-neutral-800 px-4 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <Link
+          href="/admin/profile"
+          className="flex items-center gap-2.5 min-w-0 group hover:opacity-90 transition"
+        >
           <Avatar size="sm" />
           <div className="min-w-0 leading-tight">
-            <p className="text-[11px] text-neutral-400 truncate max-w-[160px]">{displayName}</p>
+            <p className="text-[11px] text-neutral-300 group-hover:text-amber-400 font-medium truncate max-w-[160px] transition">
+              {displayName}
+            </p>
           </div>
-        </div>
+        </Link>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -124,13 +131,21 @@ export default function AdminSidebar() {
       >
         {/* Brand Header */}
         <div className="p-4 lg:p-5 border-b border-neutral-800 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+          <Link
+            href="/admin/profile"
+            className="flex items-center gap-3 min-w-0 group hover:opacity-90 transition"
+            title="تعديل البيانات الشخصية"
+          >
             <Avatar />
             <div className="min-w-0 leading-snug">
-              <p className="text-xs text-neutral-400 truncate max-w-[130px]">{displayName}</p>
- 
+              <p className="text-xs font-semibold text-neutral-200 group-hover:text-amber-400 truncate max-w-[130px] transition">
+                {displayName}
+              </p>
+              <span className="text-[10px] text-neutral-500 group-hover:text-amber-500/80 transition">
+                مدير النظام
+              </span>
             </div>
-          </div>
+          </Link>
           <button
             type="button"
             onClick={() => setOpen(false)}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -68,6 +68,139 @@ function PriceRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-start justify-between gap-3 py-2 text-xs sm:text-sm border-b border-neutral-200/70 last:border-0">
       <span className="text-neutral-600">{label}</span>
       <span className="font-bold text-neutral-900 text-left">{value}</span>
+    </div>
+  );
+}
+
+function CoverSlider({
+  images,
+  alt,
+  regionName,
+}: {
+  images: string[];
+  alt: string;
+  regionName: string;
+}) {
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchX = useRef<number | null>(null);
+  const count = images.length;
+
+  // تغيير تلقائي كل 4 ثواني (لف مستمر). بيتوقف مع الـ hover/اللمس، ومع reduced-motion
+  useEffect(() => {
+    if (count < 2 || paused) return;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const t = setTimeout(() => setIndex((i) => (i + 1) % count), 4000);
+    return () => clearTimeout(t);
+  }, [index, paused, count]);
+
+  const next = () => setIndex((i) => (i + 1) % count);
+  const prev = () => setIndex((i) => (i - 1 + count) % count);
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchX.current;
+    touchX.current = null;
+    setPaused(false);
+    // RTL: السحب لليسار = التالي
+    if (dx < -40) next();
+    if (dx > 40) prev();
+  };
+
+  return (
+    <div
+      className="relative w-full aspect-[16/11] max-h-[38vh] sm:max-h-[50vh] lg:max-h-[62vh] rounded-xl sm:rounded-2xl overflow-hidden bg-neutral-200 shadow-sm border border-neutral-200"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={(e) => {
+        touchX.current = e.touches[0].clientX;
+        setPaused(true);
+      }}
+      onTouchEnd={onTouchEnd}
+      aria-roledescription="carousel"
+      aria-label={alt}
+    >
+      {images.map((src, i) => (
+        <div
+          key={src}
+          aria-hidden={i !== index}
+          className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            i === index ? 'opacity-100 z-10' : 'opacity-0 z-0'
+          }`}
+        >
+          {/* خلفية ضبابية تملا أي فراغ على الجوانب */}
+          <img
+            src={optimizeImageUrl(src, { width: 300, quality: 'eco' })}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
+          />
+          {/* الصورة كاملة من غير قص */}
+          <img
+            src={optimizeImageUrl(src, { width: 950, quality: 'auto' })}
+            alt={i === index ? alt : ''}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            decoding="async"
+            {...(i === 0 ? ({ fetchPriority: 'high' } as any) : {})}
+            className="relative z-10 w-full h-full object-contain gpu-layer"
+          />
+        </div>
+      ))}
+
+      {/* بادج المنطقة */}
+      <span className="absolute z-20 top-2.5 right-2.5 sm:top-3 sm:right-3 bg-white/80 backdrop-blur-md border border-white/50 text-neutral-900 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+        <MapPin className="w-3.5 h-3.5 text-amber-600" />
+        <span>{regionName}</span>
+      </span>
+
+      {count > 1 && (
+        <>
+          {/* نقاط (لحد 8 صور) أو عداد لو أكتر */}
+          {count <= 8 ? (
+            <div className="absolute z-20 bottom-2.5 inset-x-0 flex items-center justify-center gap-1.5">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setIndex(i)}
+                  aria-label={`الصورة ${i + 1}`}
+                  aria-current={i === index}
+                  className="p-1.5"
+                >
+                  <span
+                    className={`block h-1.5 rounded-full transition-all duration-300 ${
+                      i === index ? 'w-5 bg-amber-500' : 'w-1.5 bg-white/80'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="absolute z-20 bottom-2.5 left-1/2 -translate-x-1/2 text-[11px] text-white bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full">
+              {index + 1} / {count}
+            </span>
+          )}
+
+          {/* أسهم — للكمبيوتر بس (الموبايل بالسحب) */}
+          <button
+            type="button"
+            onClick={next}
+            aria-label="الصورة التالية"
+            className="hidden sm:flex absolute z-20 left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white text-neutral-800 items-center justify-center shadow-sm transition"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            onClick={prev}
+            aria-label="الصورة السابقة"
+            className="hidden sm:flex absolute z-20 right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white text-neutral-800 items-center justify-center shadow-sm transition"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -210,6 +343,9 @@ export default function LocationDetailPage() {
   )}`;
 
   const gallery = location.gallery || [];
+    const sliderImages = Array.from(
+    new Set([location.coverImage, ...gallery.map((g) => g.url)].filter(Boolean) as string[])
+  );
   const visibleGallery = showAllGallery ? gallery : gallery.slice(0, INITIAL_VISIBLE);
   const fullCycleCount = Math.floor(visibleGallery.length / MOSAIC_CYCLE.length) * MOSAIC_CYCLE.length;
   const activeImage = activeImageIndex !== null ? gallery[activeImageIndex] : null;
@@ -265,38 +401,20 @@ export default function LocationDetailPage() {
         {/* 2. Cover + Info/Booking */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
           {/* Cover Photo */}
+          {/* Cover Slider */}
           <div className="lg:col-span-7">
-            <div className="relative min-h-[160px] rounded-xl sm:rounded-2xl overflow-hidden bg-neutral-200 shadow-sm border border-neutral-200">
-              {location.coverImage ? (
-                <>
-                  {/* خلفية ضبابية من نفس الصورة تملا أي فراغ على الجوانب */}
-                  <img
-                    src={optimizeImageUrl(location.coverImage, { width: 300, quality: 'eco' })}
-                    alt=""
-                    aria-hidden="true"
-                    decoding="async"
-                    className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
-                  />
-                  {/* الصورة كاملة من غير قص، مع تحميل سريع وتفكيك غير متزامن */}
-                  <img
-                    src={optimizeImageUrl(location.coverImage, { width: 950, quality: 'auto' })}
-                    alt={location.name}
-                    loading="eager"
-                    decoding="async"
-                    {...({ fetchPriority: 'high' } as any)}
-                    className="relative z-10 block w-full h-auto max-h-[38vh] sm:max-h-[50vh] lg:max-h-[62vh] object-contain mx-auto gpu-layer"
-                  />
-                </>
-              ) : (
-                <div className="aspect-[16/10] w-full flex items-center justify-center text-neutral-400">
-                  <Camera className="w-10 h-10" />
-                </div>
-              )}
-              <span className="absolute z-20 top-2.5 right-2.5 sm:top-3 sm:right-3 bg-white/80 backdrop-blur-md border border-white/50 text-neutral-900 text-[11px] sm:text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                <MapPin className="w-3.5 h-3.5 text-amber-600" />
-                <span>{regionName}</span>
-              </span>
-            </div>
+            {sliderImages.length > 0 ? (
+              <CoverSlider
+                key={location._id}
+                images={sliderImages}
+                alt={location.name}
+                regionName={regionName}
+              />
+            ) : (
+              <div className="relative aspect-[16/10] w-full rounded-xl sm:rounded-2xl bg-neutral-200 border border-neutral-200 flex items-center justify-center text-neutral-400">
+                <Camera className="w-10 h-10" />
+              </div>
+            )}
           </div>
 
           {/* Info & Booking Box */}

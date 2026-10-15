@@ -21,6 +21,17 @@ export const apiClient = axios.create({
   timeout: 15000,
 });
 
+// Request interceptor to attach token if present in localStorage
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('admin_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 // Response interceptor to unwrap errors and format error messages
 apiClient.interceptors.response.use(
   (response) => response,
@@ -45,9 +56,15 @@ export const api = {
   auth: {
     login: async (phone: string, password: string): Promise<ApiResponse<{ admin: IAdmin; token?: string }>> => {
       const res = await apiClient.post('/auth/login', { phone, password });
+      if (typeof window !== 'undefined' && res.data?.data?.token) {
+        localStorage.setItem('admin_token', res.data.data.token);
+      }
       return res.data;
     },
     logout: async (): Promise<ApiResponse> => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_token');
+      }
       const res = await apiClient.post('/auth/logout');
       return res.data;
     },
@@ -217,6 +234,16 @@ export const api = {
     },
     deleteImage: async (publicId: string): Promise<ApiResponse<{ deleted: boolean; message: string }>> => {
       const res = await apiClient.delete(`/admin/uploads/${encodeURIComponent(publicId)}`);
+      return res.data;
+    },
+
+    // Profile & Security
+    updateProfile: async (data: { name?: string; email?: string; phone?: string }): Promise<ApiResponse<IAdmin>> => {
+      const res = await apiClient.patch('/admin/profile', data);
+      return res.data;
+    },
+    changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<ApiResponse> => {
+      const res = await apiClient.patch('/admin/change-password', data);
       return res.data;
     },
   },

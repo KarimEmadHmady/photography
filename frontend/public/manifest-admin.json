@@ -1,6 +1,6 @@
 {
   "name": "تثبيت تطبيق لوحدة التحكم",
-  "short_name": "الداشبورد",
+  "short_name": "Photography App",
   "description": "تطبيق إدارة ومتابعة لوحة تحكم للتصوير الفوتوغرافي",
   "start_url": "/admin",
   "scope": "/admin",

@@ -11,6 +11,7 @@ import {
   Phone,
   AlertCircle,
   Loader2,
+  ChevronDown,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { optimizeImageUrl } from '../lib/image';
@@ -446,6 +447,26 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile: مؤشر الماوس المتحرك للسكرول لأسفل */}
+        <div className="absolute bottom-2.5 sm:bottom-3.5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 lg:hidden z-20 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => {
+              window.scrollTo({
+                top: window.innerHeight - 70,
+                behavior: 'smooth',
+              });
+            }}
+            aria-label="اسحب لأسفل للاستكشاف"
+            className="flex flex-col items-center gap-1 group focus:outline-none"
+          >
+            <div className="w-5 h-8.5 rounded-full border-2 border-neutral-400/90 group-hover:border-amber-600 flex justify-center pt-1.5 bg-white/70 backdrop-blur-xs transition-colors shadow-xs">
+              <span className="w-1 h-2 bg-amber-600 rounded-full animate-mouse-wheel" />
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-neutral-400 group-hover:text-amber-600 animate-bounce -mt-0.5 transition-colors" />
+          </button>
         </div>
       </section>
 

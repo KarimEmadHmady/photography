@@ -39,3 +39,23 @@ input, button, select, textarea {
   transform: translateZ(0);
   backface-visibility: hidden;
 }
+
+/* حركة مؤشر الماوس للتمرير */
+@keyframes mouse-wheel {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.animate-mouse-wheel {
+  animation: mouse-wheel 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}

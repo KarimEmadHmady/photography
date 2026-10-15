@@ -143,7 +143,7 @@ function CoverSlider({
             loading={i === 0 ? 'eager' : 'lazy'}
             decoding="async"
             {...(i === 0 ? ({ fetchPriority: 'high' } as any) : {})}
-            className="relative z-10 w-full h-full object-contain gpu-layer"
+            className="relative z-10 w-full h-full object-cover gpu-layer"
           />
         </div>
       ))}
@@ -520,9 +520,9 @@ export default function LocationDetailPage() {
                     {/* overlay + caption */}
                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/70 via-neutral-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                    <span className="absolute top-2 left-2 w-8 h-8 rounded-full bg-white/85 backdrop-blur-md text-amber-700 flex items-center justify-center shadow-sm opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                      <ZoomIn className="w-4 h-4" />
-                    </span>
+<span className="absolute top-2 left-2 w-8 h-8 max-lg:w-6 max-lg:h-6 rounded-full bg-white/85 backdrop-blur-md text-amber-700 flex items-center justify-center shadow-sm opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 max-lg:opacity-100 max-lg:translate-y-0 max-lg:transition-none">
+  <ZoomIn className="w-4 h-4 max-lg:w-3 max-lg:h-3" />
+</span>
 
                     {isFeature && (
                       <span className="absolute top-2 right-2 bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
@@ -705,7 +705,7 @@ export default function LocationDetailPage() {
                 goPrev();
               }}
               aria-label="الصورة السابقة"
-              className="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+              className="absolute right-2 sm:right-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition z-50"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
@@ -719,7 +719,7 @@ export default function LocationDetailPage() {
                 goNext();
               }}
               aria-label="الصورة التالية"
-              className="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition"
+              className="absolute left-2 sm:left-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition z-50"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>

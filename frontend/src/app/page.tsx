@@ -10,12 +10,12 @@ import {
   MessageCircle,
   Phone,
   AlertCircle,
-  Loader2,
   ChevronDown,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { optimizeImageUrl } from '../lib/image';
 import { IRegion, ILocation, IService, ISiteSettings } from '../types';
+import HeroSlides from '../components/Heroslides';
 
 /* ------------------------------------------------------------------ */
 /* Design tokens (one place to control the whole look)                 */
@@ -51,7 +51,7 @@ function SectionHeading({
       }`}
     >
       <div className={centered ? 'max-w-xl' : ''}>
-        <h2 className="text-2x0.8 sm:text-3xl font-bold text-neutral-900 leading-snug">{title}</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 leading-snug">{title}</h2>
         <span
           className={`mt-3 block h-1 w-12 rounded-full bg-amber-500 ${centered ? 'mx-auto' : ''}`}
         />
@@ -207,6 +207,8 @@ function FeaturedLocationCard({ loc, currency }: { loc: ILocation; currency: str
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
+const SLIDE_INTERVAL_MS = 4500;
+
 export default function HomePage() {
   const [data, setData] = useState<{
     settings: ISiteSettings;
@@ -247,10 +249,28 @@ export default function HomePage() {
 
   useEffect(() => {
     if (heroImages.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
-    }, 4500);
-    return () => clearInterval(interval);
+
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (interval) return;
+      interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+      }, SLIDE_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (interval) clearInterval(interval);
+      interval = null;
+    };
+    // نوقف السليدر لما التاب يتخفي علشان ميتراكمش انتقالات
+    const onVisibility = () => (document.hidden ? stop() : start());
+
+    start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [heroImages.length]);
 
   if (loading) {
@@ -329,36 +349,17 @@ export default function HomePage() {
   return (
     <div className="bg-white">
       {/* 1. Hero — light */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-amber-50 via-white to-white border-b border-neutral-200 pt-28 pb-14 min-h-[100svh] flex items-center lg:min-h-0 lg:pt-36 lg:pb-20">
-        {/* Mobile: خلفية متحركة للسليدر — محملة بذكاء بدون إثقال المعالج */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-amber-50 via-white-20 to-white border-b border-neutral-200 pt-28 pb-14 min-h-[100svh] flex items-center lg:min-h-0 lg:pt-36 lg:pb-20">
+        {/* Mobile: خلفية متحركة للسليدر */}
         {heroImages.length > 0 && (
           <div className="absolute inset-0 lg:hidden overflow-hidden">
-            {heroImages.map((imgUrl, idx) => {
-              // لا نحمل في الذاكرة إلا الشريحة الحالية والتالية فقط لتوفير استهلاك البيانات والرام
-              const isRelevant =
-                idx === currentSlide ||
-                idx === (currentSlide + 1) % heroImages.length;
-              if (!isRelevant) return null;
-
-              return (
-                <div
-                  key={imgUrl + idx}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                    idx === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                  }`}
-                >
-                  <img
-                    src={optimizeImageUrl(imgUrl, { width: 800, quality: 'auto' })}
-                    alt={`${settings.hero.title} ${idx + 1}`}
-                    loading={idx === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    {...(idx === 0 ? { fetchPriority: 'high' } : {})}
-                    className="w-full h-full object-cover gpu-layer"
-                  />
-                </div>
-              );
-            })}
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/85 to-white/40" />
+            <HeroSlides
+              images={heroImages}
+              currentSlide={currentSlide}
+              width={800}
+              alt={settings.hero.title}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/45 to-white/10" />
           </div>
         )}
 
@@ -408,32 +409,12 @@ export default function HomePage() {
                 <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-2xl border-2 border-amber-400" />
                 <div className="relative aspect-4/5 rounded-2xl overflow-hidden shadow-xl bg-neutral-100 border-4 border-white group">
                   {heroImages.length > 0 ? (
-                    heroImages.map((imgUrl, idx) => {
-                      const isRelevant =
-                        idx === currentSlide ||
-                        idx === (currentSlide + 1) % heroImages.length;
-                      if (!isRelevant) return null;
-
-                      return (
-                        <div
-                          key={imgUrl + idx}
-                          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                            idx === currentSlide
-                              ? 'opacity-100 z-10'
-                              : 'opacity-0 z-0 pointer-events-none'
-                          }`}
-                        >
-                          <img
-                            src={optimizeImageUrl(imgUrl, { width: 900, quality: 'auto' })}
-                            alt={`${settings.hero.title} ${idx + 1}`}
-                            loading={idx === 0 ? 'eager' : 'lazy'}
-                            decoding="async"
-                            {...(idx === 0 ? { fetchPriority: 'high' } : {})}
-                            className="w-full h-full object-cover gpu-layer"
-                          />
-                        </div>
-                      );
-                    })
+                    <HeroSlides
+                      images={heroImages}
+                      currentSlide={currentSlide}
+                      width={900}
+                      alt={settings.hero.title}
+                    />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-amber-50 text-center p-8">
                       <div className="w-16 h-16 rounded-full bg-white border border-amber-200 shadow-sm flex items-center justify-center mb-4">
@@ -450,7 +431,7 @@ export default function HomePage() {
         </div>
 
         {/* Mobile: مؤشر الماوس المتحرك للسكرول لأسفل */}
-        <div className="absolute bottom-2.5 sm:bottom-3.5 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 lg:hidden z-20 pointer-events-auto">
+        <div className="absolute bottom-8 sm:bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 lg:hidden z-40 pointer-events-auto">
           <button
             type="button"
             onClick={() => {

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Camera, Menu, X, MessageCircle, Shield } from 'lucide-react';
 import { api } from '../lib/api';
 import { ISiteSettings } from '../types';
+import { ShareButton } from './ShareModal';
 
 const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1';
@@ -96,6 +97,9 @@ export default function Navbar() {
 
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
+          <ShareButton
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-neutral-900/5 hover:bg-amber-500/10 text-neutral-800 hover:text-amber-700 text-[13px] font-semibold transition border border-neutral-900/10 hover:border-amber-500/30 ${focusRing}`}
+          />
           <a
             href={whatsappUrl}
             target="_blank"
@@ -105,11 +109,14 @@ export default function Navbar() {
             <MessageCircle className="w-4 h-4" />
             <span>واتساب</span>
           </a>
-
         </div>
 
         {/* Mobile actions */}
         <div className="md:hidden flex items-center gap-1.5 shrink-0">
+          <ShareButton
+            showLabel={false}
+            className={`w-9 h-9 rounded-full bg-neutral-900/5 hover:bg-amber-500/10 text-neutral-800 hover:text-amber-700 flex items-center justify-center transition border border-neutral-900/10 ${focusRing}`}
+          />
           <a
             href={whatsappUrl}
             target="_blank"
@@ -146,7 +153,11 @@ export default function Navbar() {
               {link.name}
             </Link>
           ))}
-
+          <div className="pt-2 px-1">
+            <ShareButton
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-neutral-100 hover:bg-amber-50 text-neutral-800 hover:text-amber-800 text-sm font-semibold transition border border-neutral-200"
+            />
+          </div>
         </div>
       )}
     </header>

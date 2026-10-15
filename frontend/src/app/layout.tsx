@@ -5,6 +5,7 @@ import { AuthProvider } from '../hooks/useAuth';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import FloatingWhatsApp from '../components/FloatingWhatsApp';
+import { ShareProvider } from '../components/ShareModal';
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
@@ -27,10 +28,12 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <body className={`${cairo.className} min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased flex flex-col justify-between`}>
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1 w-full">{children}</main>
-          <Footer />
-          <FloatingWhatsApp />
+          <ShareProvider>
+            <Navbar />
+            <main className="flex-1 w-full">{children}</main>
+            <Footer />
+            <FloatingWhatsApp />
+          </ShareProvider>
         </AuthProvider>
       </body>
     </html>

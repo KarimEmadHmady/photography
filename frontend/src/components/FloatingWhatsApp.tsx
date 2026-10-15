@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, Share2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { ISiteSettings } from '../types';
+import { useShare } from './ShareModal';
 
 export default function FloatingWhatsApp() {
   const pathname = usePathname();
+  const { openShare } = useShare();
   const [settings, setSettings] = useState<ISiteSettings | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -55,7 +57,18 @@ export default function FloatingWhatsApp() {
       aria-label="أزرار الإجراءات السريعة"
       className="fixed bottom-15 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-2.5 sm:gap-3 pointer-events-auto"
     >
-      {/* 1. زر الواتساب العائم */}
+      {/* 1. زر المشاركة السريع */}
+      <button
+        type="button"
+        onClick={() => openShare()}
+        aria-label="مشاركة الصفحة ونسخ الرابط"
+        title="مشاركة الصفحة ونسخ الرابط"
+        className="w-10 h-10 flex items-center justify-center rounded-full bg-white/95 hover:bg-neutral-900 text-neutral-700 hover:text-white shadow-md hover:shadow-xl hover:shadow-black/20 border border-neutral-200/90 hover:border-neutral-900 hover:scale-105 active:scale-95 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+      >
+        <Share2 className="w-4 h-4 stroke-[2.2]" />
+      </button>
+
+      {/* 2. زر الواتساب العائم */}
       <a
         href={whatsappUrl}
         target="_blank"

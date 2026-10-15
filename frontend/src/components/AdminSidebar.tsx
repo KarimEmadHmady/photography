@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { AdminInstallButton } from './AdminPWA';
 
 const menuItems = [
   { name: 'نظرة عامة', href: '/admin', icon: LayoutDashboard },
@@ -166,7 +167,10 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-3 lg:p-4 border-t border-neutral-800 space-y-1 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="p-3 lg:p-4 border-t border-neutral-800 space-y-1.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="pb-1 lg:hidden">
+            <AdminInstallButton />
+          </div>
           <Link
             href="/"
             target="_blank"

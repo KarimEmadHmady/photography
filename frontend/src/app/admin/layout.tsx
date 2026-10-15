@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import AdminSidebar from '../../components/AdminSidebar';
+import AdminPWA from '../../components/AdminPWA';
 import { Loader2 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [admin, loading, isLoginPage, router]);
 
   if (isLoginPage) {
-    return <>{children}</>;
+    return (
+      <>
+        <AdminPWA />
+        {children}
+      </>
+    );
   }
 
   if (loading) {
@@ -38,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen flex bg-neutral-100 text-neutral-900" dir="rtl">
+      <AdminPWA />
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <main className="p-6 sm:p-8 max-w-7xl w-full mx-auto mt-10 sm:mt-0">{children}</main>

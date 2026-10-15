@@ -1,0 +1,72 @@
+{
+  "name": "تثبيت تطبيق لوحدة التحكم",
+  "short_name": "الداشبورد",
+  "description": "تطبيق إدارة ومتابعة لوحة تحكم للتصوير الفوتوغرافي",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "id": "/admin",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#171717",
+  "theme_color": "#d97706",
+  "dir": "rtl",
+  "lang": "ar",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/admin-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/admin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/admin-icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/admin-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "أماكن التصوير",
+      "short_name": "الأماكن",
+      "url": "/admin/locations",
+      "description": "إدارة أماكن التصوير والقاعات المتاحة",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "المناطق الجغرافية",
+      "short_name": "المناطق",
+      "url": "/admin/regions",
+      "description": "إدارة وتصنيف المناطق",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "الصفحة الرئيسية",
+      "short_name": "الرئيسية",
+      "url": "/admin/homepage",
+      "description": "تعديل صور وسلايدر الهيرو والعناوين",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "إعدادات الموقع",
+      "short_name": "الإعدادات",
+      "url": "/admin/settings",
+      "description": "تحديث أرقام التواصل وروابط السوشيال ميديا",
+      "icons": [{ "src": "/icons/admin-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

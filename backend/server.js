@@ -60,10 +60,31 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Compression middleware
 app.use(compression());
 
-// Optional: Rate limiting for public endpoints
+// Rate limiting with smart bypass for admin and development
+const isDev = process.env.NODE_ENV === 'development';
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
+  max: isDev ? 10000 : 2000, // Very generous limit
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // 1. Skip completely in development mode or localhost
+    if (isDev) return true;
+    if (req.ip === '127.0.0.1' || req.ip === '::1' || req.ip === '::ffff:127.0.0.1') return true;
+
+    // 2. Skip health check endpoint
+    if (req.path.includes('/health')) return true;
+
+    // 3. Skip authenticated admin requests & admin routes
+    if (req.headers.authorization) return true;
+    if (req.originalUrl && req.originalUrl.includes('/admin')) return true;
+
+    return false;
+  },
+  message: {
+    success: false,
+    message: 'تم تجاوز الحد المسموح من الطلبات، يرجى المحاولة بعد قليل.',
+  },
 });
 app.use(limiter);
 

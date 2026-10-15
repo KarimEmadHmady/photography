@@ -20,6 +20,7 @@ import {
   ZoomIn,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { ILocation, ISiteSettings } from '../../../types';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق */
@@ -145,9 +146,21 @@ export default function LocationDetailPage() {
   if (loading) {
     return (
       <div className={shell}>
-        <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-          <p className="text-neutral-600 text-sm">جاري تحميل تفاصيل مكان التصوير...</p>
+        <div className={`${container} space-y-6 sm:space-y-8 animate-pulse pb-12`}>
+          <div className="h-4 w-48 bg-neutral-200 rounded" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 h-72 sm:h-96 rounded-2xl bg-neutral-200" />
+            <div className="lg:col-span-5 space-y-3 bg-white p-6 rounded-2xl border border-neutral-200">
+              <div className="h-7 w-3/4 bg-neutral-200 rounded-lg" />
+              <div className="h-4 w-1/2 bg-neutral-100 rounded" />
+              <div className="h-32 bg-neutral-100 rounded-xl mt-4" />
+              <div className="h-11 bg-amber-200/70 rounded-xl mt-4" />
+            </div>
+          </div>
+          <div className="space-y-4 pt-4">
+            <div className="h-6 w-52 bg-neutral-200 rounded" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 h-64 bg-neutral-100 rounded-2xl" />
+          </div>
         </div>
       </div>
     );
@@ -258,16 +271,20 @@ export default function LocationDetailPage() {
                 <>
                   {/* خلفية ضبابية من نفس الصورة تملا أي فراغ على الجوانب */}
                   <img
-                    src={location.coverImage}
+                    src={optimizeImageUrl(location.coverImage, { width: 300, quality: 'eco' })}
                     alt=""
                     aria-hidden="true"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
                   />
-                  {/* الصورة كاملة من غير قص، بس بارتفاع أقصى أصغر في الموبايل */}
+                  {/* الصورة كاملة من غير قص، مع تحميل سريع وتفكيك غير متزامن */}
                   <img
-                    src={location.coverImage}
+                    src={optimizeImageUrl(location.coverImage, { width: 950, quality: 'auto' })}
                     alt={location.name}
-                    className="relative z-10 block w-full h-auto max-h-[38vh] sm:max-h-[50vh] lg:max-h-[62vh] object-contain mx-auto"
+                    loading="eager"
+                    decoding="async"
+                    {...({ fetchPriority: 'high' } as any)}
+                    className="relative z-10 block w-full h-auto max-h-[38vh] sm:max-h-[50vh] lg:max-h-[62vh] object-contain mx-auto gpu-layer"
                   />
                 </>
               ) : (
@@ -359,7 +376,7 @@ export default function LocationDetailPage() {
 
         {/* 4. Photo Gallery */}
         {gallery.length > 0 && (
-          <section className="space-y-4">
+          <section className="content-auto space-y-4">
             <SectionTitle count={`${gallery.length} صورة`}>معرض صور الجلسات في هذا المكان</SectionTitle>
 
             <div className="grid grid-flow-dense grid-cols-2 md:grid-cols-4 auto-rows-[110px] sm:auto-rows-[150px] lg:auto-rows-[190px] gap-2 sm:gap-3">
@@ -375,10 +392,11 @@ export default function LocationDetailPage() {
                     className={`group relative overflow-hidden rounded-lg sm:rounded-xl bg-neutral-200 border border-neutral-200 shadow-xs hover:shadow-xl hover:z-10 transition-shadow duration-300 ${span} ${focusRing}`}
                   >
                     <img
-                      src={img.url}
+                      src={optimizeImageUrl(img.url, { width: 500, quality: 'auto' })}
                       alt={img.alt || location.name}
                       loading="lazy"
-                      className="absolute inset-0 w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
                     />
 
                     {/* overlay + caption */}
@@ -458,7 +476,7 @@ export default function LocationDetailPage() {
 
         {/* 6. Related Locations */}
         {related && related.length > 0 && (
-          <section className="space-y-4">
+          <section className="content-auto space-y-4">
             <SectionTitle>أماكن تصوير أخرى قد تنال إعجابك</SectionTitle>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">
               {related.map((rel) => (
@@ -470,10 +488,11 @@ export default function LocationDetailPage() {
                   <div className="relative aspect-[16/10] bg-neutral-200 overflow-hidden">
                     {rel.coverImage ? (
                       <img
-                        src={rel.coverImage}
+                        src={optimizeImageUrl(rel.coverImage, { width: 500, quality: 'auto' })}
                         alt={rel.name}
                         loading="lazy"
-                        className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                        decoding="async"
+                        className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-neutral-400">
@@ -593,9 +612,10 @@ export default function LocationDetailPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={activeImage.url}
+              src={optimizeImageUrl(activeImage.url, { width: 1400, quality: 'auto' })}
               alt={activeImage.alt || location.name}
-              className="max-h-[78vh] max-w-full object-contain rounded-xl shadow-2xl"
+              decoding="async"
+              className="max-h-[78vh] max-w-full object-contain rounded-xl shadow-2xl gpu-layer"
             />
             {activeImage.alt && (
               <p className="text-white/90 text-xs mt-3 text-center px-8">{activeImage.alt}</p>

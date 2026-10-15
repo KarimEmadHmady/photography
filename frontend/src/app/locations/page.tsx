@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { MapPin, Camera, Loader2, AlertCircle, Filter, ArrowLeft, Star } from 'lucide-react';
 import { api } from '../../lib/api';
+import { optimizeImageUrl } from '../../lib/image';
 import { ILocation, IRegion, ISiteSettings } from '../../types';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق */
@@ -116,9 +117,16 @@ function LocationsContent() {
 
         {/* Content State */}
         {loading ? (
-          <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-            <p className="text-neutral-600 text-sm">جاري جلب أماكن التصوير...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-xl overflow-hidden border border-neutral-200 shadow-xs">
+                <div className="aspect-[16/10] bg-neutral-200" />
+                <div className="p-4 space-y-2">
+                  <div className="h-5 w-2/3 bg-neutral-200 rounded" />
+                  <div className="h-3.5 w-1/2 bg-neutral-100 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : error ? (
           <div className="max-w-xl mx-auto p-6 sm:p-8 bg-white border border-neutral-200 rounded-xl text-center space-y-3 shadow-sm">
@@ -137,7 +145,7 @@ function LocationsContent() {
             <p className="text-xs text-neutral-500 text-right">
               {locations.length} مكان تصوير
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            <div className="content-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               {locations.map((loc) => {
                 const regionName =
                   typeof loc.regionId === 'object' ? (loc.regionId as any).name : '';
@@ -150,10 +158,11 @@ function LocationsContent() {
                     <div className="relative aspect-[16/9] sm:aspect-[16/10] bg-neutral-200 overflow-hidden">
                       {loc.coverImage ? (
                         <img
-                          src={loc.coverImage}
+                          src={optimizeImageUrl(loc.coverImage, { width: 550, quality: 'auto' })}
                           alt={loc.name}
                           loading="lazy"
-                          className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                          decoding="async"
+                          className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-400">

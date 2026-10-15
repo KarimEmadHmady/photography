@@ -27,3 +27,15 @@ body {
 input, button, select, textarea {
   font-family: inherit;
 }
+
+/* تحسين أداء السكرول وسرعة معالجة الأقسام البعيدة عن الشاشة */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 450px;
+}
+
+/* تسريع المعالجة الرسومية بواسطة كارت الشاشة بدون تهنيج */
+.gpu-layer {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}

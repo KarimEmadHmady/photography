@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { IRegion, ILocation } from '../../../types';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق pt-24 / sm:pt-28 */
@@ -47,9 +48,23 @@ export default function RegionDetailPage() {
   if (loading) {
     return (
       <div className={shell}>
-        <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-          <p className="text-neutral-600 text-sm">جاري تحميل المنطقة...</p>
+        <div className={`${container} space-y-6 lg:space-y-8 animate-pulse`}>
+          <div className="h-4 w-48 bg-neutral-200 rounded" />
+          <div className="h-52 sm:h-60 rounded-2xl bg-neutral-200" />
+          <div className="space-y-4">
+            <div className="h-7 w-56 bg-neutral-200 rounded-lg" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-xl overflow-hidden border border-neutral-200">
+                  <div className="aspect-[16/10] bg-neutral-200" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-5 w-2/3 bg-neutral-200 rounded" />
+                    <div className="h-4 w-1/2 bg-neutral-100 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -104,9 +119,12 @@ export default function RegionDetailPage() {
           <div className="absolute inset-0 lg:static lg:col-span-2 lg:order-2 bg-neutral-200 overflow-hidden lg:min-h-[180px] lg:max-h-[240px]">
             {region.coverImage ? (
               <img
-                src={region.coverImage}
+                src={optimizeImageUrl(region.coverImage, { width: 950, quality: 'auto' })}
                 alt={region.name}
-                className="absolute inset-0 w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+                {...({ fetchPriority: 'high' } as any)}
+                className="absolute inset-0 w-full h-full object-cover gpu-layer"
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-neutral-400">
@@ -156,7 +174,7 @@ export default function RegionDetailPage() {
               <p className="text-neutral-500 text-sm">لا توجد أماكن تصوير مضافة لهذه المنطقة حالياً.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            <div className="content-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               {region.locations.map((loc) => (
                 <Link
                   key={loc._id}
@@ -166,9 +184,11 @@ export default function RegionDetailPage() {
                   <div className="relative aspect-[16/9] sm:aspect-[16/10] bg-neutral-200 overflow-hidden">
                     {loc.coverImage ? (
                       <img
-                        src={loc.coverImage}
+                        src={optimizeImageUrl(loc.coverImage, { width: 550, quality: 'auto' })}
                         alt={loc.name}
-                        className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-neutral-400">

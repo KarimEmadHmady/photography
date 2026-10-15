@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { api } from '../lib/api';
+import { optimizeImageUrl } from '../lib/image';
 import { IRegion, ILocation, IService, ISiteSettings } from '../types';
 
 /* ------------------------------------------------------------------ */
@@ -97,10 +98,11 @@ function FeaturedOverlayCard({
     >
       {loc.coverImage ? (
         <img
-          src={loc.coverImage}
+          src={optimizeImageUrl(loc.coverImage, { width: large ? 950 : 600, quality: 'auto' })}
           alt={loc.name}
           loading="lazy"
-          className="absolute inset-0 -z-10 w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          decoding="async"
+          className="absolute inset-0 -z-10 w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
         />
       ) : (
         <div className="absolute inset-0 -z-10 flex items-center justify-center text-neutral-400">
@@ -160,10 +162,11 @@ function FeaturedLocationCard({ loc, currency }: { loc: ILocation; currency: str
       <div className="relative aspect-16/10 bg-neutral-200 overflow-hidden">
         {loc.coverImage ? (
           <img
-            src={loc.coverImage}
+            src={optimizeImageUrl(loc.coverImage, { width: 550, quality: 'auto' })}
             alt={loc.name}
             loading="lazy"
-            className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            decoding="async"
+            className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-neutral-400">
@@ -251,9 +254,28 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3 bg-neutral-50">
-        <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-        <p className="text-neutral-600 text-sm">جاري تحميل الموقع...</p>
+      <div className="bg-white min-h-screen">
+        <section className="relative overflow-hidden bg-gradient-to-b from-amber-50 via-white to-white border-b border-neutral-200 pt-28 pb-14 lg:pt-36 lg:pb-20">
+          <div className={container}>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+              <div className="lg:col-span-7 space-y-5 animate-pulse">
+                <div className="h-6 w-44 bg-amber-100 rounded-full" />
+                <div className="h-10 w-4/5 bg-neutral-200 rounded-2xl" />
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-neutral-100 rounded-md" />
+                  <div className="h-4 w-2/3 bg-neutral-100 rounded-md" />
+                </div>
+                <div className="pt-2 flex gap-3">
+                  <div className="h-12 w-44 bg-amber-200/70 rounded-xl" />
+                  <div className="h-12 w-40 bg-neutral-200 rounded-xl" />
+                </div>
+              </div>
+              <div className="hidden lg:block lg:col-span-5">
+                <div className="aspect-4/5 max-w-[320px] mx-auto rounded-2xl bg-neutral-100 animate-pulse border-4 border-white shadow-xl" />
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }
@@ -307,26 +329,35 @@ export default function HomePage() {
     <div className="bg-white">
       {/* 1. Hero — light */}
       <section className="relative overflow-hidden bg-gradient-to-b from-amber-50 via-white to-white border-b border-neutral-200 pt-28 pb-14 min-h-[100svh] flex items-center lg:min-h-0 lg:pt-36 lg:pb-20">
-        {/* Mobile: خلفية متحركة للسليدر بجميع الصور + طبقة بيضاء عشان النص يتقري */}
+        {/* Mobile: خلفية متحركة للسليدر — محملة بذكاء بدون إثقال المعالج */}
         {heroImages.length > 0 && (
           <div className="absolute inset-0 lg:hidden overflow-hidden">
-            {heroImages.map((imgUrl, idx) => (
-              <div
-                key={imgUrl + idx}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                  idx === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                }`}
-              >
-                <img
-                  src={imgUrl}
-                  alt={`${settings.hero.title} ${idx + 1}`}
-                  className={`w-full h-full object-cover transition-transform duration-7000 ease-out ${
-                    idx === currentSlide ? 'scale-105' : 'scale-100'
+            {heroImages.map((imgUrl, idx) => {
+              // لا نحمل في الذاكرة إلا الشريحة الحالية والتالية فقط لتوفير استهلاك البيانات والرام
+              const isRelevant =
+                idx === currentSlide ||
+                idx === (currentSlide + 1) % heroImages.length;
+              if (!isRelevant) return null;
+
+              return (
+                <div
+                  key={imgUrl + idx}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                    idx === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'
                   }`}
-                />
-              </div>
-            ))}
-            <div className="absolute inset-0 bg-gradient-to-t from-white " />
+                >
+                  <img
+                    src={optimizeImageUrl(imgUrl, { width: 800, quality: 'auto' })}
+                    alt={`${settings.hero.title} ${idx + 1}`}
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    {...(idx === 0 ? { fetchPriority: 'high' } : {})}
+                    className="w-full h-full object-cover gpu-layer"
+                  />
+                </div>
+              );
+            })}
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/85 to-white/40" />
           </div>
         )}
 
@@ -376,24 +407,32 @@ export default function HomePage() {
                 <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-2xl border-2 border-amber-400" />
                 <div className="relative aspect-4/5 rounded-2xl overflow-hidden shadow-xl bg-neutral-100 border-4 border-white group">
                   {heroImages.length > 0 ? (
-                    heroImages.map((imgUrl, idx) => (
-                      <div
-                        key={imgUrl + idx}
-                        className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                          idx === currentSlide
-                            ? 'opacity-100 z-10'
-                            : 'opacity-0 z-0 pointer-events-none'
-                        }`}
-                      >
-                        <img
-                          src={imgUrl}
-                          alt={`${settings.hero.title} ${idx + 1}`}
-                          className={`w-full h-full object-cover transition-transform duration-7000 ease-out ${
-                            idx === currentSlide ? 'scale-105' : 'scale-100'
+                    heroImages.map((imgUrl, idx) => {
+                      const isRelevant =
+                        idx === currentSlide ||
+                        idx === (currentSlide + 1) % heroImages.length;
+                      if (!isRelevant) return null;
+
+                      return (
+                        <div
+                          key={imgUrl + idx}
+                          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                            idx === currentSlide
+                              ? 'opacity-100 z-10'
+                              : 'opacity-0 z-0 pointer-events-none'
                           }`}
-                        />
-                      </div>
-                    ))
+                        >
+                          <img
+                            src={optimizeImageUrl(imgUrl, { width: 900, quality: 'auto' })}
+                            alt={`${settings.hero.title} ${idx + 1}`}
+                            loading={idx === 0 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            {...(idx === 0 ? { fetchPriority: 'high' } : {})}
+                            className="w-full h-full object-cover gpu-layer"
+                          />
+                        </div>
+                      );
+                    })
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-amber-100 to-amber-50 text-center p-8">
                       <div className="w-16 h-16 rounded-full bg-white border border-amber-200 shadow-sm flex items-center justify-center mb-4">
@@ -434,9 +473,11 @@ export default function HomePage() {
                 >
                   {region.coverImage && (
                     <img
-                      src={region.coverImage}
+                      src={optimizeImageUrl(region.coverImage, { width: 600, quality: 'auto' })}
                       alt={region.name}
-                      className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500 gpu-layer"
                     />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/90 via-neutral-900/30 to-transparent" />
@@ -461,7 +502,7 @@ export default function HomePage() {
 
       {/* 3. Featured Locations — neutral-50 */}
       {leadLoc && (
-        <section className="bg-neutral-50 border-y border-neutral-200 py-10 lg:py-14">
+        <section className="content-auto bg-neutral-50 border-y border-neutral-200 py-10 lg:py-14">
           <div className={container}>
             <SectionHeading
               title="أشهر مواقع وجلسات تصوير السيشن"
@@ -516,7 +557,7 @@ export default function HomePage() {
 
       {/* 4. Featured Services — amber tint */}
       {featuredServices && featuredServices.length > 0 && (
-        <section className="bg-amber-50 py-10 lg:py-14">
+        <section className="content-auto bg-amber-50 py-10 lg:py-14">
           <div className={container}>
             <SectionHeading
               align="center"
@@ -561,7 +602,7 @@ export default function HomePage() {
       )}
 
       {/* 5. How it works — white */}
-      <section className="bg-white py-10 lg:py-14">
+      <section className="content-auto bg-white py-10 lg:py-14">
         <div className={container}>
           <SectionHeading
             align="center"
@@ -587,7 +628,7 @@ export default function HomePage() {
       </section>
 
       {/* 6. Contact CTA — amber card, sits right above the dark footer */}
-      <section id="contact" className="bg-white pb-10 lg:pb-14">
+      <section id="contact" className="content-auto bg-white pb-10 lg:pb-14">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-2xl bg-amber-600 text-white p-6 sm:p-8 text-center space-y-4 shadow-lg">
             <div className="pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full bg-amber-500/60 blur-2xl" />

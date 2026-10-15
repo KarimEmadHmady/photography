@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { IRegion } from '../../../types';
 import ImageUploader from '../../../components/ImageUploader';
 
@@ -172,9 +173,11 @@ export default function AdminRegionsPage() {
   const Thumb = ({ region, cls }: { region: IRegion; cls: string }) =>
     region.coverImage ? (
       <img
-        src={region.coverImage}
+        src={optimizeImageUrl(region.coverImage, { width: 160, quality: 'auto' })}
         alt={region.name}
-        className={`${cls} rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0`}
+        loading="lazy"
+        decoding="async"
+        className={`${cls} rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0 gpu-layer`}
       />
     ) : (
       <div
@@ -253,7 +256,7 @@ export default function AdminRegionsPage() {
       ) : (
         <>
           {/* ===== موبايل: كروت ===== */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden space-y-3 content-auto">
             {regions.map((region) => (
               <div
                 key={region._id}
@@ -473,7 +476,12 @@ export default function AdminRegionsPage() {
                   />
                   {coverImage && (
                     <div className="relative aspect-[16/9] max-h-48 w-full rounded-xl overflow-hidden border border-gray-200">
-                      <img src={coverImage} alt="غلاف" className="w-full h-full object-cover" />
+                      <img
+                        src={optimizeImageUrl(coverImage, { width: 600, quality: 'auto' })}
+                        alt="غلاف"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
                       <button
                         type="button"
                         onClick={() => setCoverImage('')}

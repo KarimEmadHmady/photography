@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { IService } from '../../../types';
 import ImageUploader from '../../../components/ImageUploader';
 
@@ -233,9 +234,11 @@ export default function AdminServicesPage() {
   const Thumb = ({ service, cls }: { service: IService; cls: string }) =>
     service.mainImage ? (
       <img
-        src={service.mainImage}
+        src={optimizeImageUrl(service.mainImage, { width: 160, quality: 'auto' })}
         alt={service.name}
-        className={`${cls} rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0`}
+        loading="lazy"
+        decoding="async"
+        className={`${cls} rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0 gpu-layer`}
       />
     ) : (
       <div
@@ -339,7 +342,7 @@ export default function AdminServicesPage() {
       ) : (
         <>
           {/* ===== موبايل: كروت ===== */}
-          <div className="md:hidden space-y-3">
+          <div className="md:hidden space-y-3 content-auto">
             {services.map((service) => (
               <div
                 key={service._id}
@@ -589,8 +592,9 @@ export default function AdminServicesPage() {
                   {mainImage && (
                     <div className="relative aspect-[16/9] max-h-48 w-full rounded-xl overflow-hidden border border-gray-200">
                       <img
-                        src={mainImage}
+                        src={optimizeImageUrl(mainImage, { width: 600, quality: 'auto' })}
                         alt="صورة الخدمة"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                       <button

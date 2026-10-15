@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { Sparkles, ArrowLeft, AlertCircle } from 'lucide-react';
 import { api } from '../../lib/api';
+import { optimizeImageUrl } from '../../lib/image';
 import { IService, ISiteSettings } from '../../types';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق */
@@ -40,9 +41,28 @@ export default function ServicesPage() {
   if (loading) {
     return (
       <div className={shell}>
-        <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-          <p className="text-neutral-600 text-sm">جاري تحميل الخدمات...</p>
+        <div className={`${container} space-y-10 animate-pulse`}>
+          <div className="text-right space-y-3">
+            <div className="h-9 w-48 bg-neutral-200 rounded-lg" />
+            <div className="h-1 w-12 rounded-full bg-amber-500/50" />
+            <div className="h-4 w-96 max-w-full bg-neutral-200 rounded" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-2xl overflow-hidden border border-neutral-200">
+                <div className="aspect-16/10 bg-neutral-200" />
+                <div className="p-5 sm:p-6 space-y-3">
+                  <div className="h-5 w-3/4 bg-neutral-200 rounded" />
+                  <div className="h-3 w-full bg-neutral-100 rounded" />
+                  <div className="h-3 w-2/3 bg-neutral-100 rounded" />
+                  <div className="pt-4 border-t border-neutral-100 flex items-center justify-between">
+                    <div className="h-4 w-20 bg-neutral-200 rounded" />
+                    <div className="w-8 h-8 rounded-full bg-neutral-200" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -82,7 +102,7 @@ export default function ServicesPage() {
             <p className="text-neutral-500 text-sm">لا توجد خدمات متاحة حالياً.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 content-auto">
             {services.map((service) => (
               <Link
                 key={service._id}
@@ -92,10 +112,11 @@ export default function ServicesPage() {
                 <div className="relative aspect-16/10 bg-amber-50 overflow-hidden">
                   {service.mainImage ? (
                     <img
-                      src={service.mainImage}
+                      src={optimizeImageUrl(service.mainImage, { width: 600, quality: 'auto' })}
                       alt={service.name}
                       loading="lazy"
-                      className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      decoding="async"
+                      className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100 gpu-layer"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-amber-600">

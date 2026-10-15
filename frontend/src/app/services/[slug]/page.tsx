@@ -8,10 +8,10 @@ import {
   MessageCircle,
   ArrowRight,
   ChevronLeft,
-  Loader2,
   AlertCircle,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { IService, ISiteSettings } from '../../../types';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق */
@@ -55,9 +55,32 @@ export default function ServiceDetailPage() {
   if (loading) {
     return (
       <div className={shell}>
-        <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-          <p className="text-neutral-600 text-sm">جاري تحميل تفاصيل الخدمة...</p>
+        <div className={`${container} space-y-8 sm:space-y-10 pb-12 lg:pb-20 animate-pulse`}>
+          {/* Breadcrumb skeleton */}
+          <div className="h-4 w-48 bg-neutral-200 rounded" />
+
+          {/* Main Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="lg:col-span-6">
+              <div className="aspect-4/3 rounded-2xl sm:rounded-3xl bg-neutral-200 border border-neutral-200" />
+            </div>
+
+            <div className="lg:col-span-6 space-y-6 bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-neutral-200">
+              <div className="space-y-2">
+                <div className="h-8 w-56 bg-neutral-200 rounded-lg" />
+                <div className="h-1 w-12 rounded-full bg-amber-500/50" />
+                <div className="h-4 w-full bg-neutral-100 rounded" />
+                <div className="h-4 w-2/3 bg-neutral-100 rounded" />
+              </div>
+              <div className="h-12 bg-neutral-100 rounded-2xl border border-neutral-200" />
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-neutral-200 rounded" />
+                <div className="h-14 bg-neutral-50 rounded-xl border border-neutral-200" />
+                <div className="h-14 bg-neutral-50 rounded-xl border border-neutral-200" />
+              </div>
+              <div className="h-12 bg-neutral-200 rounded-xl" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -121,22 +144,27 @@ export default function ServiceDetailPage() {
         </nav>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start content-auto">
           {/* Main Image — كاملة من غير قص */}
           <div className="lg:col-span-6 lg:sticky lg:top-28">
             <div className="relative min-h-[220px] rounded-2xl sm:rounded-3xl overflow-hidden bg-amber-50 shadow-md border border-neutral-200">
               {service.mainImage ? (
                 <>
                   <img
-                    src={service.mainImage}
+                    src={optimizeImageUrl(service.mainImage, { width: 300, quality: 'eco' })}
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-cover scale-125 blur-2xl opacity-70 pointer-events-none"
                   />
                   <img
-                    src={service.mainImage}
+                    src={optimizeImageUrl(service.mainImage, { width: 950, quality: 'auto' })}
                     alt={service.name}
-                    className="relative z-10 block w-full h-auto max-h-[78vh] object-contain mx-auto"
+                    loading="eager"
+                    decoding="async"
+                    // @ts-ignore
+                    fetchPriority="high"
+                    className="relative z-10 block w-full h-auto max-h-[78vh] object-contain mx-auto gpu-layer"
                   />
                 </>
               ) : (

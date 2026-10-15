@@ -15,6 +15,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { ILocation, IRegion, IGalleryImage } from '../../../types';
 import ImageUploader from '../../../components/ImageUploader';
 
@@ -267,9 +268,11 @@ export default function AdminLocationsPage() {
   const Thumb = ({ loc, cls }: { loc: ILocation; cls: string }) =>
     loc.coverImage ? (
       <img
-        src={loc.coverImage}
+        src={optimizeImageUrl(loc.coverImage, { width: 160, quality: 'auto' })}
         alt={loc.name}
-        className={`${cls} rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0`}
+        loading="lazy"
+        decoding="async"
+        className={`${cls} rounded-lg object-cover bg-gray-100 border border-gray-200 shrink-0 gpu-layer`}
       />
     ) : (
       <div
@@ -360,7 +363,7 @@ export default function AdminLocationsPage() {
       ) : (
         <>
           {/* ===== موبايل / تابلت صغير: كروت ===== */}
-          <div className="lg:hidden space-y-3">
+          <div className="lg:hidden space-y-3 content-auto">
             {locations.map((loc) => (
               <div
                 key={loc._id}
@@ -729,7 +732,12 @@ export default function AdminLocationsPage() {
                     />
                     {coverImage && (
                       <div className="relative aspect-[16/9] max-h-48 w-full rounded-xl overflow-hidden border border-gray-200">
-                        <img src={coverImage} alt="غلاف" className="w-full h-full object-cover" />
+                        <img
+                          src={optimizeImageUrl(coverImage, { width: 600, quality: 'auto' })}
+                          alt="غلاف"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
                         <button
                           type="button"
                           onClick={() => setCoverImage('')}
@@ -760,8 +768,10 @@ export default function AdminLocationsPage() {
                             className="relative aspect-square rounded-xl overflow-hidden border border-gray-200"
                           >
                             <img
-                              src={img.url}
+                              src={optimizeImageUrl(img.url, { width: 250, quality: 'auto' })}
                               alt={img.alt}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover"
                             />
                             <button

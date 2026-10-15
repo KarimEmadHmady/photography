@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../hooks/useAuth';
 import { api } from '../../../lib/api';
+import { optimizeImageUrl } from '../../../lib/image';
 import { ISiteSettings } from '../../../types';
 
 const focusRing =
@@ -91,10 +92,12 @@ export default function AdminLoginPage() {
             {images.map((url, idx) => (
               <img
                 key={url + idx}
-                src={url}
+                src={optimizeImageUrl(url, { width: 640, quality: 'auto' })}
                 alt=""
                 aria-hidden="true"
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 bg-top  ${
+                loading={idx === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 bg-top gpu-layer ${
                   idx === currentSlide ? 'opacity-100' : 'opacity-0'
                 }`}
               />
@@ -223,10 +226,14 @@ export default function AdminLoginPage() {
             {images.map((url, idx) => (
               <img
                 key={url + idx}
-                src={url}
+                src={optimizeImageUrl(url, { width: 1200, quality: 'auto' })}
                 alt=""
                 aria-hidden="true"
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${
+                loading={idx === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                // @ts-ignore
+                fetchPriority={idx === 0 ? 'high' : 'auto'}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out gpu-layer ${
                   idx === currentSlide ? 'opacity-100' : 'opacity-0'
                 }`}
               />

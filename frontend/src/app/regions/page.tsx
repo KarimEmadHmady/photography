@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MapPin, ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../../lib/api';
+import { optimizeImageUrl } from '../../lib/image';
 import { IRegion } from '../../types';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق pt-24 / sm:pt-28 */
@@ -34,9 +35,22 @@ export default function RegionsPage() {
   if (loading) {
     return (
       <div className={shell}>
-        <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-          <p className="text-neutral-600 text-sm">جاري تحميل المناطق...</p>
+        <div className={`${container} space-y-6 lg:space-y-8 animate-pulse`}>
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-neutral-200 rounded-xl" />
+            <div className="h-4 w-96 max-w-full bg-neutral-100 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-xl overflow-hidden border border-neutral-200 shadow-xs">
+                <div className="aspect-[16/10] bg-neutral-200" />
+                <div className="p-4 space-y-2">
+                  <div className="h-5 w-1/2 bg-neutral-200 rounded" />
+                  <div className="h-3.5 w-3/4 bg-neutral-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -86,7 +100,7 @@ export default function RegionsPage() {
             <p className="text-neutral-500 text-sm">لا توجد مناطق منشورة حالياً.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
+          <div className="content-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
             {regions.map((region) => (
               <Link
                 key={region._id}
@@ -97,9 +111,11 @@ export default function RegionsPage() {
                 <div className="relative aspect-[16/9] sm:aspect-[16/10] bg-neutral-200 overflow-hidden">
                   {region.coverImage ? (
                     <img
-                      src={region.coverImage}
+                      src={optimizeImageUrl(region.coverImage, { width: 600, quality: 'auto' })}
                       alt={region.name}
-                      className="w-full h-full object-cover scale-100 group-hover:scale-110 transition-transform duration-700 ease-out motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-500 ease-out gpu-layer"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-neutral-400">

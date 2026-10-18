@@ -21,20 +21,39 @@ function LocationsContent() {
   const [settings, setSettings] = useState<ISiteSettings | null>(null);
   const [selectedRegion, setSelectedRegion] = useState(initialRegion);
   const [loading, setLoading] = useState(true);
+  const [regionsLoading, setRegionsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const fetchRegionsAndSettings = () => {
+    setRegionsLoading(true);
+    api.public
+      .getRegions()
+      .then((res) => {
+        if (res.success && res.data) {
+          setRegions(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load regions:', err);
+      })
+      .finally(() => setRegionsLoading(false));
+
+    api.public
+      .getSettings()
+      .then((res) => {
+        if (res.success && res.data) {
+          setSettings(res.data);
+        }
+      })
+      .catch(() => {});
+  };
 
   // Load regions and settings once
   useEffect(() => {
-    Promise.all([api.public.getRegions(), api.public.getSettings()])
-      .then(([regRes, setRes]) => {
-        if (regRes.success && regRes.data) setRegions(regRes.data);
-        if (setRes.success && setRes.data) setSettings(setRes.data);
-      })
-      .catch(() => {});
+    fetchRegionsAndSettings();
   }, []);
 
-  // Fetch locations whenever selectedRegion changes
-  useEffect(() => {
+  const fetchLocations = () => {
     setLoading(true);
     setError(null);
     api.public
@@ -47,9 +66,14 @@ function LocationsContent() {
         }
       })
       .catch((err) => {
-        setError(err.message || 'تعذر الاتصال بالسيرفر');
+        setError(err.message || 'تعذر الاتصال بالسيرفر، يرجى إعادة المحاولة.');
       })
       .finally(() => setLoading(false));
+  };
+
+  // Fetch locations whenever selectedRegion changes
+  useEffect(() => {
+    fetchLocations();
   }, [selectedRegion]);
 
   const currency = settings?.currencyLabel || 'جنيه';
@@ -101,17 +125,36 @@ function LocationsContent() {
             >
               كل المناطق
             </button>
-            {regions.map((reg) => (
+
+            {regionsLoading && regions.length === 0 ? (
+              <>
+                <div className="h-8 w-20 bg-neutral-100 rounded-full animate-pulse" />
+                <div className="h-8 w-24 bg-neutral-100 rounded-full animate-pulse" />
+                <div className="h-8 w-28 bg-neutral-100 rounded-full animate-pulse" />
+              </>
+            ) : (
+              regions.map((reg) => (
+                <button
+                  key={reg._id}
+                  type="button"
+                  onClick={() => setSelectedRegion(reg.slug)}
+                  aria-pressed={selectedRegion === reg.slug}
+                  className={chip(selectedRegion === reg.slug)}
+                >
+                  {reg.name}
+                </button>
+              ))
+            )}
+
+            {!regionsLoading && regions.length === 0 && (
               <button
-                key={reg._id}
                 type="button"
-                onClick={() => setSelectedRegion(reg.slug)}
-                aria-pressed={selectedRegion === reg.slug}
-                className={chip(selectedRegion === reg.slug)}
+                onClick={fetchRegionsAndSettings}
+                className="text-xs text-amber-700 hover:underline px-2 py-1"
               >
-                {reg.name}
+                إعادة تحميل المناطق
               </button>
-            ))}
+            )}
           </div>
         </div>
 
@@ -134,6 +177,12 @@ function LocationsContent() {
               <AlertCircle className="w-6 h-6 text-red-500" />
             </div>
             <p className="text-sm text-neutral-700">{error}</p>
+            <button
+              onClick={fetchLocations}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-semibold hover:bg-amber-700 transition"
+            >
+              إعادة المحاولة
+            </button>
           </div>
         ) : locations.length === 0 ? (
           <div className="text-center py-14 bg-white rounded-xl border border-dashed border-neutral-300">

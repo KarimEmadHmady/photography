@@ -159,6 +159,7 @@ const locationSchema = new Schema(
 );
 
 // Indexes for queries
+locationSchema.index({ slug: 1, status: 1 });
 locationSchema.index({ regionId: 1, status: 1, sortOrder: 1 });
 locationSchema.index({ isFeatured: 1, status: 1 });
 

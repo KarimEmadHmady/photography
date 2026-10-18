@@ -184,6 +184,7 @@ const serviceSchema = new Schema(
 
 // Index for status, isActive, and sortOrder queries
 serviceSchema.index({ status: 1, isActive: 1, sortOrder: 1 });
+serviceSchema.index({ status: 1, isActive: 1, 'visibility.allLocations': 1 });
 
 export const Service = mongoose.models.Service || mongoose.model('Service', serviceSchema);
 export default Service;

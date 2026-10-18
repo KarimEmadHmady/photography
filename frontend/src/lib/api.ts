@@ -18,8 +18,37 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 30000, // 30 seconds to prevent premature timeouts during cold DB handshakes
 });
+
+// Lightweight in-memory TTL cache for frequent read-heavy public data
+const memoryCache = new Map<string, { data: any; expiry: number }>();
+
+export const clearApiCache = (prefix?: string) => {
+  if (!prefix) {
+    memoryCache.clear();
+  } else {
+    for (const key of memoryCache.keys()) {
+      if (key.startsWith(prefix)) {
+        memoryCache.delete(key);
+      }
+    }
+  }
+};
+
+const getCachedData = <T>(key: string): T | null => {
+  const item = memoryCache.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expiry) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return item.data as T;
+};
+
+const setCachedData = (key: string, data: any, ttlMs: number = 300000) => {
+  memoryCache.set(key, { data, expiry: Date.now() + ttlMs });
+};
 
 // Request interceptor to attach token if present in localStorage
 apiClient.interceptors.request.use((config) => {
@@ -32,15 +61,34 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor to unwrap errors and format error messages
+// Response interceptor with 1 automatic retry for transient GET failures
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    // Auto-retry once for idempotent GET requests on network failure or 502/503/504
+    if (
+      config &&
+      config.method?.toLowerCase() === 'get' &&
+      !config._retry &&
+      (!error.response || error.response.status >= 500 || error.code === 'ECONNABORTED')
+    ) {
+      config._retry = true;
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      return apiClient(config);
+    }
+
     let message = 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى';
     if (error.response?.data?.message) {
       message = error.response.data.message;
     } else if (error.message) {
-      message = error.message;
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        message = 'استغرقت الاستجابة وقتاً أطول من المعتاد، يرجى إعادة المحاولة.';
+      } else if (error.message.includes('Network Error')) {
+        message = 'تعذر الاتصال بالسيرفر، يرجى التأكد من اتصال الإنترنت.';
+      } else {
+        message = error.message;
+      }
     }
     const customError = new Error(message) as any;
     customError.statusCode = error.response?.status;
@@ -96,11 +144,25 @@ export const api = {
       return res.data;
     },
     getSettings: async (): Promise<ApiResponse<ISiteSettings>> => {
+      const cacheKey = 'pub_settings';
+      const cached = getCachedData<ApiResponse<ISiteSettings>>(cacheKey);
+      if (cached) return cached;
+
       const res = await apiClient.get('/settings/public');
+      if (res.data?.success) {
+        setCachedData(cacheKey, res.data, 300000); // 5 minutes
+      }
       return res.data;
     },
     getRegions: async (): Promise<ApiResponse<IRegion[]>> => {
+      const cacheKey = 'pub_regions';
+      const cached = getCachedData<ApiResponse<IRegion[]>>(cacheKey);
+      if (cached) return cached;
+
       const res = await apiClient.get('/regions');
+      if (res.data?.success) {
+        setCachedData(cacheKey, res.data, 300000); // 5 minutes
+      }
       return res.data;
     },
     getRegionBySlug: async (slug: string): Promise<ApiResponse<IRegion & { locations: ILocation[] }>> => {

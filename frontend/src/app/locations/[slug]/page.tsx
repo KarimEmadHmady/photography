@@ -218,9 +218,10 @@ export default function LocationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchLocationData = () => {
     if (!slug) return;
     setLoading(true);
+    setError(null);
 
     Promise.all([
       api.public.getLocationBySlug(slug),
@@ -246,6 +247,10 @@ export default function LocationDetailPage() {
         setError(err.message || 'تعذر تحميل بيانات مكان التصوير');
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchLocationData();
   }, [slug]);
 
   const galleryLength = location?.gallery?.length || 0;
@@ -303,7 +308,7 @@ export default function LocationDetailPage() {
     return (
       <div className={shell}>
         <div className={container}>
-          <div className="max-w-xl mx-auto p-6 sm:p-8 bg-white border border-neutral-200 rounded-xl text-center space-y-3 shadow-sm">
+          <div className="max-w-xl mx-auto p-6 sm:p-8 bg-white border border-neutral-200 rounded-xl text-center space-y-4 shadow-sm">
             <div className="w-12 h-12 mx-auto rounded-full bg-red-50 flex items-center justify-center">
               <AlertCircle className="w-6 h-6 text-red-500" />
             </div>
@@ -311,13 +316,22 @@ export default function LocationDetailPage() {
             <p className="text-sm text-neutral-600">
               {error || 'لم يتم العثور على مكان التصوير المطلوب'}
             </p>
-            <Link
-              href="/locations"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition"
-            >
-              <ArrowRight className="w-4 h-4" />
-              <span>العودة لكل الأماكن</span>
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={fetchLocationData}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-semibold hover:bg-amber-700 transition"
+              >
+                <span>إعادة المحاولة</span>
+              </button>
+              <Link
+                href="/locations"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-100 text-neutral-800 rounded-xl text-sm font-semibold hover:bg-neutral-200 transition"
+              >
+                <ArrowRight className="w-4 h-4" />
+                <span>العودة لكل الأماكن</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

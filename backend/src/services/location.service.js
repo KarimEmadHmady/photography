@@ -71,8 +71,17 @@ export class LocationService {
 
     // Filter by specific region (slug or ID)
     if (region) {
+      let cleanRegion = region;
+      try {
+        cleanRegion = decodeURIComponent(region).trim().toLowerCase();
+      } catch (_) {}
+
       const targetRegion = publishedRegions.find(
-        (r) => r.slug === region || r._id.toString() === region
+        (r) =>
+          r.slug === cleanRegion ||
+          r.slug === region ||
+          r._id.toString() === region ||
+          r._id.toString() === cleanRegion
       );
       if (targetRegion) {
         query.regionId = targetRegion._id;
@@ -129,7 +138,15 @@ export class LocationService {
    * Public: Get published location details by slug
    */
   static async getPublicLocationBySlug(slug) {
-    const location = await Location.findOne({ slug, status: 'published' })
+    let cleanSlug = slug;
+    try {
+      cleanSlug = decodeURIComponent(slug).trim().toLowerCase();
+    } catch (_) {}
+
+    const location = await Location.findOne({
+      $or: [{ slug: cleanSlug }, { slug }],
+      status: 'published',
+    })
       .populate({
         path: 'regionId',
         select: 'name slug coverImage status',
@@ -154,17 +171,26 @@ export class LocationService {
       throw error;
     }
 
-    // Also fetch services that apply to all locations (visibility.allLocations = true)
-    const allLocationServices = await Service.find({
-      status: 'published',
-      isActive: true,
-      'visibility.allLocations': true,
-      _id: { $nin: location.relatedServiceIds.map((s) => s._id) },
-    })
-      .select('name slug shortDescription mainImage price')
-      .lean();
+    // Safely extract valid relatedServiceIds without null crashes
+    const populatedServices = (location.relatedServiceIds || []).filter(Boolean);
+    const existingServiceIds = populatedServices.map((s) => s._id).filter(Boolean);
 
-    const mergedServices = [...location.relatedServiceIds, ...allLocationServices];
+    // Also fetch services that apply to all locations (visibility.allLocations = true)
+    let allLocationServices = [];
+    try {
+      allLocationServices = await Service.find({
+        status: 'published',
+        isActive: true,
+        'visibility.allLocations': true,
+        _id: { $nin: existingServiceIds },
+      })
+        .select('name slug shortDescription mainImage price')
+        .lean();
+    } catch (err) {
+      console.error('Failed to fetch allLocationServices:', err);
+    }
+
+    const mergedServices = [...populatedServices, ...(allLocationServices || [])];
 
     return {
       ...location,
@@ -182,13 +208,17 @@ export class LocationService {
       location = await Location.findById(slugOrId).lean();
     }
     if (!location) {
-      location = await Location.findOne({ slug: slugOrId }).lean();
+      let cleanSlug = slugOrId;
+      try {
+        cleanSlug = decodeURIComponent(slugOrId).trim().toLowerCase();
+      } catch (_) {}
+      location = await Location.findOne({
+        $or: [{ slug: cleanSlug }, { slug: slugOrId }],
+      }).lean();
     }
 
     if (!location) {
-      const error = new Error('مكان التصوير غير موجود');
-      error.statusCode = 404;
-      throw error;
+      return [];
     }
 
     // 1. If admin-selected relatedLocationIds exist, fetch published ones

@@ -160,21 +160,39 @@ export default function AdminLocationsPage() {
   };
 
   const addGalleryImage = (img: any) => {
-    const newImage: IGalleryImage = {
-      publicId: img.publicId,
-      url: img.url,
-      width: img.width || 800,
-      height: img.height || 600,
-      format: img.format || 'jpg',
-      bytes: img.bytes || 0,
-      alt: img.alt || name || 'صورة مكان تصوير',
-      sortOrder: gallery.length,
-    };
-    setGallery([...gallery, newImage]);
-    // If no cover image yet, set first gallery image as cover
-    if (!coverImage) {
-      setCoverImage(img.url);
-    }
+    setGallery((prev) => {
+      const newImage: IGalleryImage = {
+        publicId: img.publicId,
+        url: img.url,
+        width: img.width || 800,
+        height: img.height || 600,
+        format: img.format || 'jpg',
+        bytes: img.bytes || 0,
+        alt: img.alt || name || 'صورة مكان تصوير',
+        sortOrder: prev.length,
+      };
+      return [...prev, newImage];
+    });
+    setCoverImage((prev) => prev || img.url);
+  };
+
+  const addGalleryImages = (imgs: any[]) => {
+    if (!imgs || imgs.length === 0) return;
+    setGallery((prev) => {
+      const startIdx = prev.length;
+      const newItems: IGalleryImage[] = imgs.map((img, i) => ({
+        publicId: img.publicId,
+        url: img.url,
+        width: img.width || 800,
+        height: img.height || 600,
+        format: img.format || 'jpg',
+        bytes: img.bytes || 0,
+        alt: img.alt || name || 'صورة مكان تصوير',
+        sortOrder: startIdx + i,
+      }));
+      return [...prev, ...newItems];
+    });
+    setCoverImage((prev) => prev || imgs[0]?.url || '');
   };
 
   const removeGalleryImage = (index: number) => {
@@ -756,8 +774,10 @@ export default function AdminLocationsPage() {
                       معرض صور المكان ({gallery.length} صورة)
                     </h4>
                     <ImageUploader
-                      label="إضافة صور جديدة للمعرض"
+                      label="إضافة صور جديدة للمعرض (يمكنك تحديد عدة صور معاً)"
+                      multiple={true}
                       onUploaded={addGalleryImage}
+                      onMultipleUploaded={addGalleryImages}
                       defaultAlt={name}
                     />
                     {gallery.length > 0 && (

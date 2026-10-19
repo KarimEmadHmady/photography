@@ -9,73 +9,41 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-export default function AdminPWA() {
-  useEffect(() => {
-    // 1. Ensure PWA tags are injected strictly in Admin
-    const head = document.head;
+// Global prompt capture so any component (sidebar or floating card) can trigger it
+let globalDeferredPrompt: BeforeInstallPromptEvent | null = null;
+const promptListeners = new Set<(prompt: BeforeInstallPromptEvent | null) => void>();
 
-    const addLink = (rel: string, href: string) => {
-      let link = head.querySelector(`link[rel="${rel}"][href="${href}"]`);
-      if (!link) {
-        link = document.createElement('link');
-        link.setAttribute('rel', rel);
-        link.setAttribute('href', href);
-        head.appendChild(link);
-      }
-    };
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    globalDeferredPrompt = e as BeforeInstallPromptEvent;
+    promptListeners.forEach((fn) => fn(globalDeferredPrompt));
+  });
 
-    const addMeta = (name: string, content: string) => {
-      let meta = head.querySelector(`meta[name="${name}"]`);
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.setAttribute('name', name);
-        meta.setAttribute('content', content);
-        head.appendChild(meta);
-      }
-    };
-
-    // Manifest scoped strictly to Admin
-    addLink('manifest', '/manifest-admin.json');
-    addLink('apple-touch-icon', '/icons/admin-icon-192.png');
-
-    // Apple / Mobile metadata
-    addMeta('theme-color', '#d97706');
-    addMeta('apple-mobile-web-app-capable', 'yes');
-    addMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
-    addMeta('apple-mobile-web-app-title', 'الداشبورد');
-
-    // 2. Register Service Worker with /admin/ scope
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw-admin.js', { scope: '/admin/' })
-        .then((reg) => {
-          console.log('[Admin PWA] Service Worker registered for scope:', reg.scope);
-        })
-        .catch((err) => {
-          console.warn('[Admin PWA] Service Worker registration failed:', err);
-        });
-    }
-  }, []);
-
-  return null;
+  window.addEventListener('appinstalled', () => {
+    globalDeferredPrompt = null;
+    promptListeners.forEach((fn) => fn(null));
+  });
 }
 
-/* ================= زر / كارت التثبيت ================= */
-
-const DISMISS_KEY = 'admin_pwa_dismissed_at';
-const DISMISS_DAYS = 7;
-
 const detectIos = () => {
+  if (typeof window === 'undefined') return false;
   const ua = window.navigator.userAgent.toLowerCase();
   const isAppleMobile = /iphone|ipad|ipod/.test(ua);
-  // iPadOS الحديث بيعرّف نفسه كـ Mac بس عنده touch
   const isIPadOS = ua.includes('macintosh') && window.navigator.maxTouchPoints > 1;
   return isAppleMobile || isIPadOS;
 };
 
-const isStandalone = () =>
-  window.matchMedia('(display-mode: standalone)').matches ||
-  (window.navigator as any).standalone === true;
+const isStandalone = () => {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true
+  );
+};
+
+const DISMISS_KEY = 'admin_pwa_dismissed_at';
+const DISMISS_DAYS = 7;
 
 const wasDismissedRecently = () => {
   try {
@@ -86,13 +54,118 @@ const wasDismissedRecently = () => {
   }
 };
 
-/**
- * كارت تثبيت لوحة التحكم (موبايل/تابلت فقط).
- * لازم يتركّب في admin/layout.tsx علشان يفضل شغال طول ما الأدمن مفتوح
- * (حدث beforeinstallprompt بيتبعت مرة واحدة بس).
- */
-export function AdminInstallButton({ className = '' }: { className?: string }) {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+/* ================= نافذة شرح التثبيت على آيفون ================= */
+
+function IosGuideModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      dir="rtl"
+      className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4 animate-in fade-in duration-200"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="تثبيت التطبيق على آيفون"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative bg-white w-full sm:max-w-sm max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl"
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="إغلاق"
+          className="absolute top-3 left-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"
+        >
+          <X className="w-4 h-4" />
+        </button>
+
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <Smartphone className="w-5 h-5" />
+          </div>
+          <h4 className="text-base font-bold text-gray-900">التثبيت على آيفون</h4>
+        </div>
+
+        <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
+          لتثبيت التطبيق على جهاز الآيفون اضغط مشاركة ثم اختر «إضافة إلى الشاشة الرئيسية» أو &quot;Add to Home Screen&quot; من القائمة.
+        </p>
+
+        <img
+          src="/pwa_ios.png"
+          alt="شرح تثبيت التطبيق على iOS"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+          className="w-full rounded-xl border border-gray-200 shadow-sm mb-4"
+        />
+
+        <ol className="space-y-3">
+          <Step n={1} icon={<Share className="w-5 h-5" />}>
+            اضغط زر <strong>المشاركة</strong> في شريط Safari.
+          </Step>
+          <Step n={2} icon={<SquarePlus className="w-5 h-5" />}>
+            اختار <strong>«إضافة إلى الشاشة الرئيسية»</strong> (Add to Home Screen).
+          </Step>
+          <Step n={3} icon={<Check className="w-5 h-5" />}>
+            اضغط <strong>«إضافة»</strong> (Add) فوق على اليمين.
+          </Step>
+        </ol>
+
+        <p className="mt-4 text-[11px] text-gray-500 leading-relaxed bg-amber-50 border border-amber-100 rounded-xl p-2.5">
+          لو بتفتح من متصفح تاني غير Safari (زي Chrome أو من جوه تطبيق)، افتح الرابط في Safari الأول.
+        </p>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full mt-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold transition"
+        >
+          فهمت
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Step({
+  n,
+  icon,
+  children,
+}: {
+  n: number;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-center gap-3">
+      <span className="w-6 h-6 shrink-0 rounded-full bg-gray-900 text-white text-[11px] font-bold flex items-center justify-center">
+        {n}
+      </span>
+      <span className="w-10 h-10 shrink-0 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+        {icon}
+      </span>
+      <span className="text-xs text-gray-700 leading-relaxed">{children}</span>
+    </li>
+  );
+}
+
+/* ================= 1. الكارت العايم للموبايل ================= */
+
+function AdminFloatingPrompt() {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(globalDeferredPrompt);
   const [isIos, setIsIos] = useState(false);
   const [visible, setVisible] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
@@ -103,48 +176,31 @@ export function AdminInstallButton({ className = '' }: { className?: string }) {
     const ios = detectIos();
     setIsIos(ios);
 
-    // iOS مفيهوش beforeinstallprompt، فبنعرض الكارت على طول
     if (ios) {
       setVisible(true);
       return;
     }
 
-    const onBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    if (globalDeferredPrompt) {
       setVisible(true);
+    }
+
+    const listener = (prompt: BeforeInstallPromptEvent | null) => {
+      setDeferredPrompt(prompt);
+      if (prompt) setVisible(true);
+      else setVisible(false);
     };
 
-    const onAppInstalled = () => {
-      setVisible(false);
-      setDeferredPrompt(null);
-    };
-
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-    window.addEventListener('appinstalled', onAppInstalled);
+    promptListeners.add(listener);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', onAppInstalled);
+      promptListeners.delete(listener);
     };
   }, []);
-
-  // قفل السكرول + Esc لما شرح iOS مفتوح
-  useEffect(() => {
-    if (!showGuide) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setShowGuide(false);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [showGuide]);
 
   const dismiss = () => {
     try {
       localStorage.setItem(DISMISS_KEY, String(Date.now()));
-    } catch { }
+    } catch {}
     setVisible(false);
     setShowGuide(false);
   };
@@ -164,13 +220,11 @@ export function AdminInstallButton({ className = '' }: { className?: string }) {
 
   if (!visible) return null;
 
-  // portal علشان الكارت يبقى fixed فعلاً حتى لو اتركّب جوه عنصر عليه transform (زي السايدبار)
   return createPortal(
     <>
-      {/* الكارت العايم */}
       <div
         dir="rtl"
-        className={`fixed z-50 inset-x-3 bottom-3 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-80 lg:hidden pb-[env(safe-area-inset-bottom)] ${className}`}
+        className="fixed z-50 inset-x-3 bottom-3 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-80 lg:hidden pb-[env(safe-area-inset-bottom)]"
       >
         <div className="relative bg-white border border-gray-200 shadow-2xl rounded-2xl p-3.5">
           <button
@@ -213,102 +267,131 @@ export function AdminInstallButton({ className = '' }: { className?: string }) {
         </div>
       </div>
 
-      {/* شرح التثبيت على iPhone / iPad */}
-      {showGuide && (
-        <div
-          dir="rtl"
-          className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4"
-          onClick={() => setShowGuide(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="تثبيت التطبيق على آيفون"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative bg-white w-full sm:max-w-sm max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl"
-          >
-            <button
-              type="button"
-              onClick={() => setShowGuide(false)}
-              aria-label="إغلاق"
-              className="absolute top-3 left-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                <Smartphone className="w-5 h-5" />
-              </div>
-              <h4 className="text-base font-bold text-gray-900">التثبيت على آيفون</h4>
-            </div>
-
-            <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
-              لتثبيت التطبيق على جهاز الآيفون اضغط مشاركة ثم اختر «إضافة إلى الشاشة الرئيسية»
-              أو "Add to Home Screen" من القائمة.
-            </p>
-
-            <img
-              src="/pwa_ios.png"
-              alt="شرح تثبيت التطبيق على iOS"
-              loading="lazy"
-              decoding="async"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-              className="w-full rounded-xl border border-gray-200 shadow-sm mb-4"
-            />
-
-            <ol className="space-y-3">
-              <Step n={1} icon={<Share className="w-5 h-5" />}>
-                اضغط زر <strong>المشاركة</strong> في شريط Safari.
-              </Step>
-              <Step n={2} icon={<SquarePlus className="w-5 h-5" />}>
-                اختار <strong>«إضافة إلى الشاشة الرئيسية»</strong> (Add to Home Screen).
-              </Step>
-              <Step n={3} icon={<Check className="w-5 h-5" />}>
-                اضغط <strong>«إضافة»</strong> (Add) فوق على اليمين.
-              </Step>
-            </ol>
-
-            <p className="mt-4 text-[11px] text-gray-500 leading-relaxed bg-amber-50 border border-amber-100 rounded-xl p-2.5">
-              لو بتفتح من متصفح تاني غير Safari (زي Chrome أو من جوه تطبيق)، افتح الرابط في Safari
-              الأول.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setShowGuide(false)}
-              className="w-full mt-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold transition"
-            >
-              فهمت
-            </button>
-          </div>
-        </div>
-      )}
+      {showGuide && <IosGuideModal onClose={() => setShowGuide(false)} />}
     </>,
     document.body
   );
 }
 
-function Step({
-  n,
-  icon,
-  children,
-}: {
-  n: number;
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}) {
+/* ================= 2. المكون الثابت في السايد بار ================= */
+
+/**
+ * يظهر في تابة السايد بار بشكل ثابت إذا كان التطبيق غير مُثبّت
+ */
+export function AdminInstallButton({ className = '' }: { className?: string }) {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(globalDeferredPrompt);
+  const [isIos, setIsIos] = useState(false);
+  const [installed, setInstalled] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+
+  useEffect(() => {
+    if (isStandalone()) {
+      setInstalled(true);
+      return;
+    }
+
+    const ios = detectIos();
+    setIsIos(ios);
+
+    const listener = (prompt: BeforeInstallPromptEvent | null) => {
+      setDeferredPrompt(prompt);
+      if (isStandalone()) {
+        setInstalled(true);
+      }
+    };
+
+    promptListeners.add(listener);
+    return () => {
+      promptListeners.delete(listener);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (isIos) {
+      setShowGuide(true);
+      return;
+    }
+
+    if (deferredPrompt) {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setInstalled(true);
+      }
+      setDeferredPrompt(null);
+    } else {
+      setShowGuide(true);
+    }
+  };
+
+  // لو التطبيق مثبت، ميظهرش في السايد بار
+  if (installed) return null;
+
+
   return (
-    <li className="flex items-center gap-3">
-      <span className="w-6 h-6 shrink-0 rounded-full bg-gray-900 text-white text-[11px] font-bold flex items-center justify-center">
-        {n}
-      </span>
-      <span className="w-10 h-10 shrink-0 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
-        {icon}
-      </span>
-      <span className="text-xs text-gray-700 leading-relaxed">{children}</span>
-    </li>
+    <>
+      <button
+        type="button"
+        onClick={handleInstall}
+        className={`lg:hidden w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium text-amber-400 hover:text-white hover:bg-neutral-800 transition ${className}`}
+      >
+        <Smartphone className="w-3.5 h-3.5" />
+        <span>تثبيت التطبيق</span>
+      </button>
+
+      {/* نافذة الشرح للآيفون */}
+      {showGuide &&
+        typeof document !== 'undefined' &&
+        createPortal(<IosGuideModal onClose={() => setShowGuide(false)} />, document.body)}
+    </>
   );
+}
+
+/* ================= المكون الأساسي لـ Admin PWA ================= */
+
+export default function AdminPWA() {
+  useEffect(() => {
+    const head = document.head;
+
+    const addLink = (rel: string, href: string) => {
+      let link = head.querySelector(`link[rel="${rel}"][href="${href}"]`);
+      if (!link) {
+        link = document.createElement('link');
+        link.setAttribute('rel', rel);
+        link.setAttribute('href', href);
+        head.appendChild(link);
+      }
+    };
+
+    const addMeta = (name: string, content: string) => {
+      let meta = head.querySelector(`meta[name="${name}"]`);
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', name);
+        meta.setAttribute('content', content);
+        head.appendChild(meta);
+      }
+    };
+
+    addLink('manifest', '/manifest-admin.json');
+    addLink('apple-touch-icon', '/icons/admin-icon-192.png');
+
+    addMeta('theme-color', '#d97706');
+    addMeta('apple-mobile-web-app-capable', 'yes');
+    addMeta('apple-mobile-web-app-status-bar-style', 'black-translucent');
+    addMeta('apple-mobile-web-app-title', 'الداشبورد');
+
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw-admin.js', { scope: '/admin/' })
+        .then((reg) => {
+          console.log('[Admin PWA] Service Worker registered for scope:', reg.scope);
+        })
+        .catch((err) => {
+          console.warn('[Admin PWA] Service Worker registration failed:', err);
+        });
+    }
+  }, []);
+
+  return <AdminFloatingPrompt />;
 }

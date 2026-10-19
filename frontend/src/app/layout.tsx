@@ -32,10 +32,12 @@ export const metadata: Metadata = {
       'موقع المصور الفوتوغرافي المتخصص في توثيق حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
     images: [
       {
-        url: '/og-image.jpg',
+        url: `${siteUrl}/og-image.jpg`,
+        secureUrl: `${siteUrl}/og-image.jpg`,
         width: 1200,
         height: 630,
-        alt: 'معرض تصوير حفلات الزفاف والسيشن',
+        type: 'image/jpeg',
+        alt: 'معرض تصوير حفلات الزفاف والسيشن | مصطفى متولي',
       },
     ],
   },
@@ -44,7 +46,7 @@ export const metadata: Metadata = {
     title: 'معرض تصوير حفلات الزفاف والسيشن | أماكن تصوير متميزة',
     description:
       'موقع المصور الفوتوغرافي المتخصص في توثيق حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
-    images: ['/og-image.jpg'],
+    images: [`${siteUrl}/og-image.jpg`],
   },
 };
 

@@ -47,7 +47,21 @@ export default function HomePage() {
 
   useEffect(() => {
     loadData();
+    // إجبار المتصفح على البقاء في أعلى الصفحة ومنع القفز لأسفل
+    if (typeof window !== 'undefined') {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'manual';
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
   }, []);
+
+  // عند انتهاء التحميل نضمن أن الصفحة تبدأ من الأعلى تماماً
+  useEffect(() => {
+    if (!loading && typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+  }, [loading]);
 
   if (loading) {
     return <HomeSkeleton />;

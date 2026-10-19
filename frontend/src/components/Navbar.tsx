@@ -54,11 +54,11 @@ export default function Navbar() {
     : 'https://wa.me/';
 
   return (
-    <header
-      className={`fixed top-0 inset-x-3 sm:inset-x-6 mt-3 sm:mt-4 max-w-6xl mx-auto z-50 bg-white/70 backdrop-blur-xl backdrop-saturate-150 border border-white/30 shadow-lg shadow-black/10 transition-[border-radius] ${
-        isOpen ? 'rounded-3xl' : 'rounded-full'
-      }`}
-    >
+<header
+  className={`fixed top-0 inset-x-3 sm:inset-x-6 mt-3 sm:mt-4 max-w-6xl mx-auto z-50 bg-white/70 backdrop-blur-xl backdrop-saturate-150 border border-white/30 shadow-lg shadow-black/10 transition-[border-radius] duration-200 ease-out ${
+    isOpen ? 'rounded-[24px]' : 'rounded-[32px]'
+  }`}
+>
       <div className="flex items-center justify-between gap-2 h-14 sm:h-16 pe-3 ps-2.5 sm:pe-5 sm:ps-3">
         {/* Logo / Photographer Name */}
         <Link

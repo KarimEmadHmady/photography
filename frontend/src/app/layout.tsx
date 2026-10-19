@@ -14,9 +14,38 @@ const cairo = Cairo({
   display: 'swap',
 });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://mostafa-metwaly-photography.vercel.app';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: 'معرض تصوير حفلات الزفاف والسيشن | أماكن تصوير متميزة',
-  description: 'موقع المصور الفوتوغرافي المتخصص في توثيق حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
+  description:
+    'موقع المصور الفوتوغرافي المتخصص في توثيق حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
+  openGraph: {
+    type: 'website',
+    locale: 'ar_EG',
+    url: siteUrl,
+    siteName: 'Mostafa Metwaly Photography',
+    title: 'معرض تصوير حفلات الزفاف والسيشن | أماكن تصوير متميزة',
+    description:
+      'موقع المصور الفوتوغرافي المتخصص في توثيق حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'معرض تصوير حفلات الزفاف والسيشن',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'معرض تصوير حفلات الزفاف والسيشن | أماكن تصوير متميزة',
+    description:
+      'موقع المصور الفوتوغرافي المتخصص في توثيق حفلات الزفاف، جلسات العروسين، وأرقى أماكن التصوير الخارجية والقاعات الفاخرة.',
+    images: ['/og-image.jpg'],
+  },
 };
 
 export default function RootLayout({

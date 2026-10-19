@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { ChevronUp, Share2 } from 'lucide-react';
 import { api } from '../lib/api';
@@ -12,6 +12,8 @@ export default function FloatingWhatsApp() {
   const { openShare } = useShare();
   const [settings, setSettings] = useState<ISiteSettings | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     api.public
@@ -25,12 +27,26 @@ export default function FloatingWhatsApp() {
 
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 320);
+      setIsScrolling(true);
+
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 1200);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, []);
 
   // لا يظهر داخل صفحات لوحة تحكم المشرف
@@ -55,7 +71,9 @@ export default function FloatingWhatsApp() {
   return (
     <aside
       aria-label="أزرار الإجراءات السريعة"
-      className="fixed bottom-15 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-2.5 sm:gap-3 pointer-events-auto"
+      className={`fixed bottom-15 right-5 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-2.5 sm:gap-3 pointer-events-auto transition-opacity duration-500 hover:opacity-100 ${
+        isScrolling ? 'opacity-100' : 'opacity-50'
+      }`}
     >
       {/* 1. زر المشاركة السريع */}
       <button

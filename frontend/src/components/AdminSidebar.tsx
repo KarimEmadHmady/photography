@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   User,
+  Database,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { AdminInstallButton } from './AdminPWA';
@@ -26,6 +27,7 @@ const menuItems = [
   { name: 'الخدمات الإضافية', href: '/admin/services', icon: Layers },
   { name: 'الصفحة الرئيسية', href: '/admin/homepage', icon: Home },
   { name: 'إعدادات الموقع', href: '/admin/settings', icon: Settings },
+  { name: 'النسخ الاحتياطي', href: '/admin/backup', icon: Database },
   { name: 'البيانات الشخصية', href: '/admin/profile', icon: User },
 ];
 

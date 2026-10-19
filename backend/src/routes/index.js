@@ -11,6 +11,7 @@ import {
   adminHomepageRouter,
 } from './siteSettings.routes.js';
 import uploadRoutes from './upload.routes.js';
+import backupRoutes from './backup.routes.js';
 
 const router = express.Router();
 
@@ -51,5 +52,8 @@ router.use('/admin/homepage', adminHomepageRouter);
 
 // Image Uploads
 router.use('/admin/uploads', uploadRoutes);
+
+// Backup & Restore
+router.use('/admin/backup', backupRoutes);
 
 export default router;

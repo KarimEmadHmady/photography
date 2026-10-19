@@ -6,6 +6,9 @@ import {
   IService,
   ISiteSettings,
   IAdmin,
+  IBackupStats,
+  IBackupPayload,
+  IBackupImportResult,
 } from '../types';
 
 export const API_BASE_URL =
@@ -348,6 +351,24 @@ export const api = {
     changePassword: async (data: { currentPassword: string; newPassword: string }): Promise<ApiResponse> => {
       const res = await apiClient.patch('/admin/change-password', data);
       return res.data;
+    },
+
+    // Backup & Restore
+    backup: {
+      getStats: async (): Promise<ApiResponse<IBackupStats>> => {
+        const res = await apiClient.get('/admin/backup/stats');
+        return res.data;
+      },
+      export: async (): Promise<ApiResponse<IBackupPayload> & { filename?: string }> => {
+        const res = await apiClient.get('/admin/backup/export');
+        return res.data;
+      },
+      import: async (backupData: any): Promise<ApiResponse<IBackupImportResult>> => {
+        const res = await apiClient.post('/admin/backup/import', { backupData });
+        // Clear public and frontend cache on successful restore
+        clearApiCache();
+        return res.data;
+      },
     },
   },
 };

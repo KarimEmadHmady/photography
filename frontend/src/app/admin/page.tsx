@@ -20,6 +20,7 @@ const quickLinks = [
   { title: 'إدارة الخدمات الإضافية والباقات', href: '/admin/services' },
   { title: 'تخصيص أقسام الصفحة الرئيسية والمميزات', href: '/admin/homepage' },
   { title: 'إعدادات الهاتف، واتساب وروابط التواصل', href: '/admin/settings' },
+  { title: 'النسخ الاحتياطي واستعادة البيانات (JSON)', href: '/admin/backup' },
 ];
 
 export default function AdminDashboardPage() {

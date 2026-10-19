@@ -171,3 +171,57 @@ export interface ApiResponse<T = any> {
     totalPages: number;
   };
 }
+
+export interface IBackupStats {
+  regions: {
+    total: number;
+  };
+  locations: {
+    total: number;
+    published: number;
+    draft: number;
+  };
+  services: {
+    total: number;
+    active: number;
+  };
+  settings: {
+    configured: boolean;
+    photographerName: string;
+    lastUpdated: string | null;
+  };
+  generatedAt: string;
+}
+
+export interface IBackupMeta {
+  version: string;
+  exportedAt: string;
+  appName: string;
+  stats: {
+    regionsCount: number;
+    locationsCount: number;
+    servicesCount: number;
+    siteSettingsCount: number;
+  };
+}
+
+export interface IBackupPayload {
+  meta?: IBackupMeta;
+  data: {
+    siteSettings?: ISiteSettings | ISiteSettings[] | null;
+    regions?: IRegion[];
+    locations?: ILocation[];
+    services?: IService[];
+  };
+}
+
+export interface IBackupImportResult {
+  restored: {
+    regions: number;
+    locations: number;
+    services: number;
+    siteSettings: number;
+  };
+  restoredAt: string;
+}
+

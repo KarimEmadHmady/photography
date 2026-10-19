@@ -22,15 +22,27 @@ export const apiClient = axios.create({
 });
 
 // Lightweight in-memory TTL cache for frequent read-heavy public data
+const PUBLIC_CACHE_PREFIX = 'pub_';
 const memoryCache = new Map<string, { data: any; expiry: number }>();
+const inFlightRequests = new Map<string, Promise<any>>();
+
+// بيزيد كل ما الكاش يتمسح، علشان طلب كان شغال وقت المسح ميرجّعش بيانات قديمة للكاش
+let cacheVersion = 0;
 
 export const clearApiCache = (prefix?: string) => {
+  cacheVersion++;
   if (!prefix) {
     memoryCache.clear();
+    inFlightRequests.clear();
   } else {
     for (const key of memoryCache.keys()) {
       if (key.startsWith(prefix)) {
         memoryCache.delete(key);
+      }
+    }
+    for (const key of inFlightRequests.keys()) {
+      if (key.startsWith(prefix)) {
+        inFlightRequests.delete(key);
       }
     }
   }
@@ -50,6 +62,38 @@ const setCachedData = (key: string, data: any, ttlMs: number = 300000) => {
   memoryCache.set(key, { data, expiry: Date.now() + ttlMs });
 };
 
+const fetchWithCacheAndDedup = async <T>(
+  key: string,
+  fetcher: () => Promise<ApiResponse<T>>,
+  ttlMs: number = 300000
+): Promise<ApiResponse<T>> => {
+  const cached = getCachedData<ApiResponse<T>>(key);
+  if (cached) return cached;
+
+  const running = inFlightRequests.get(key);
+  if (running) return running as Promise<ApiResponse<T>>;
+
+  const versionAtStart = cacheVersion;
+
+  const promise: Promise<ApiResponse<T>> = fetcher()
+    .then((res) => {
+      // لو الكاش اتمسح أثناء الطلب (حفظ في الأدمن مثلاً) منخزنش النتيجة القديمة
+      if (res?.success && versionAtStart === cacheVersion) {
+        setCachedData(key, res, ttlMs);
+      }
+      return res;
+    })
+    .finally(() => {
+      // نمسح بس لو لسه هو نفس الطلب (clearApiCache ممكن يكون مسحه وبدأ طلب جديد)
+      if (inFlightRequests.get(key) === promise) {
+        inFlightRequests.delete(key);
+      }
+    });
+
+  inFlightRequests.set(key, promise);
+  return promise;
+};
+
 // Request interceptor to attach token if present in localStorage
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
@@ -63,7 +107,14 @@ apiClient.interceptors.request.use((config) => {
 
 // Response interceptor with 1 automatic retry for transient GET failures
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // أي تعديل ناجح من الأدمن (POST/PATCH/PUT/DELETE) بيمسح كاش الموقع العام تلقائياً
+    const method = response.config.method?.toLowerCase();
+    if (method && method !== 'get' && response.config.url?.startsWith('/admin')) {
+      clearApiCache(PUBLIC_CACHE_PREFIX);
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config;
     // Auto-retry once for idempotent GET requests on network failure or 502/503/504
@@ -144,26 +195,16 @@ export const api = {
       return res.data;
     },
     getSettings: async (): Promise<ApiResponse<ISiteSettings>> => {
-      const cacheKey = 'pub_settings';
-      const cached = getCachedData<ApiResponse<ISiteSettings>>(cacheKey);
-      if (cached) return cached;
-
-      const res = await apiClient.get('/settings/public');
-      if (res.data?.success) {
-        setCachedData(cacheKey, res.data, 300000); // 5 minutes
-      }
-      return res.data;
+      return fetchWithCacheAndDedup('pub_settings', async () => {
+        const res = await apiClient.get('/settings/public');
+        return res.data;
+      });
     },
     getRegions: async (): Promise<ApiResponse<IRegion[]>> => {
-      const cacheKey = 'pub_regions';
-      const cached = getCachedData<ApiResponse<IRegion[]>>(cacheKey);
-      if (cached) return cached;
-
-      const res = await apiClient.get('/regions');
-      if (res.data?.success) {
-        setCachedData(cacheKey, res.data, 300000); // 5 minutes
-      }
-      return res.data;
+      return fetchWithCacheAndDedup('pub_regions', async () => {
+        const res = await apiClient.get('/regions');
+        return res.data;
+      });
     },
     getRegionBySlug: async (slug: string): Promise<ApiResponse<IRegion & { locations: ILocation[] }>> => {
       const res = await apiClient.get(`/regions/${encodeURIComponent(slug)}`);

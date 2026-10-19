@@ -1,0 +1,1 @@
+export type PriceType = 'fixed' | 'starting_from' | 'on_request';

@@ -1,6 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { IAdmin } from '../types';
 import { api } from '../lib/api';
@@ -21,24 +28,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const refreshMe = async () => {
+  // الـ auth بيشتغل جوه /admin بس. التنقل بين صفحات الأدمن مش بيعيد الطلب.
+  const isAdminRoute = pathname?.startsWith('/admin') ?? false;
+
+  const refreshMe = useCallback(async () => {
+    if (!isAdminRoute) {
+      setAdmin(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await api.auth.me();
-      if (res.success && res.data) {
-        setAdmin(res.data);
-      } else {
-        setAdmin(null);
-      }
-    } catch (error) {
+      setAdmin(res.success && res.data ? res.data : null);
+    } catch {
       setAdmin(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAdminRoute]);
 
   useEffect(() => {
     refreshMe();
-  }, []);
+  }, [refreshMe]);
 
   const login = async (phone: string, pass: string) => {
     const res = await api.auth.login(phone, pass);

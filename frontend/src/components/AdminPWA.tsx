@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Download, Check, Sparkles, Smartphone, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Check, Share, Smartphone, SquarePlus, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -59,131 +60,255 @@ export default function AdminPWA() {
   return null;
 }
 
+/* ================= زر / كارت التثبيت ================= */
+
+const DISMISS_KEY = 'admin_pwa_dismissed_at';
+const DISMISS_DAYS = 7;
+
+const detectIos = () => {
+  const ua = window.navigator.userAgent.toLowerCase();
+  const isAppleMobile = /iphone|ipad|ipod/.test(ua);
+  // iPadOS الحديث بيعرّف نفسه كـ Mac بس عنده touch
+  const isIPadOS = ua.includes('macintosh') && window.navigator.maxTouchPoints > 1;
+  return isAppleMobile || isIPadOS;
+};
+
+const isStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  (window.navigator as any).standalone === true;
+
+const wasDismissedRecently = () => {
+  try {
+    const at = Number(localStorage.getItem(DISMISS_KEY) || 0);
+    return !!at && Date.now() - at < DISMISS_DAYS * 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+};
+
 /**
- * زر تثبيت تطبيق الداشبورد لوضعه في القائمة الجانبية أو الهيدر
+ * كارت تثبيت لوحة التحكم (موبايل/تابلت فقط).
+ * لازم يتركّب في admin/layout.tsx علشان يفضل شغال طول ما الأدمن مفتوح
+ * (حدث beforeinstallprompt بيتبعت مرة واحدة بس).
  */
 export function AdminInstallButton({ className = '' }: { className?: string }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [showIosTip, setShowIosTip] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
-    // Check if already in standalone mode
-    if (
-      typeof window !== 'undefined' &&
-      (window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone === true)
-    ) {
-      setIsInstalled(true);
+    if (isStandalone() || wasDismissedRecently()) return;
+
+    const ios = detectIos();
+    setIsIos(ios);
+
+    // iOS مفيهوش beforeinstallprompt، فبنعرض الكارت على طول
+    if (ios) {
+      setVisible(true);
+      return;
     }
 
-    // Detect iOS
-    const ua = typeof window !== 'undefined' ? window.navigator.userAgent.toLowerCase() : '';
-    const isAppleMobile = /iphone|ipad|ipod/.test(ua);
-    setIsIos(isAppleMobile);
-
-    const handleBeforeInstallPrompt = (e: Event) => {
+    const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setVisible(true);
     };
 
-    const handleAppInstalled = () => {
-      setIsInstalled(true);
+    const onAppInstalled = () => {
+      setVisible(false);
       setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
-
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+    window.addEventListener('appinstalled', onAppInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', onAppInstalled);
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const choiceResult = await deferredPrompt.userChoice;
-      if (choiceResult.outcome === 'accepted') {
-        setIsInstalled(true);
-      }
-      setDeferredPrompt(null);
-    } else if (isIos) {
-      setShowIosTip(true);
-    } else {
-      // Fallback hint for browsers that already installed or have icon in address bar
-      alert('لتثبيت تطبيق لوحة التحكم، يمكنك أيضاً الضغط على أيقونة التثبيت (➕ أو ⬇️) الموجودة في شريط عنوان المتصفح.');
-    }
+  // قفل السكرول + Esc لما شرح iOS مفتوح
+  useEffect(() => {
+    if (!showGuide) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setShowGuide(false);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [showGuide]);
+
+  const dismiss = () => {
+    try {
+      localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    } catch { }
+    setVisible(false);
+    setShowGuide(false);
   };
 
-  // If already running inside standalone PWA
-  if (isInstalled) {
-    return (
-      <div
-        className={`flex lg:hidden items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20 ${className}`}
-        title="تطبيق  مثبت لديك ويعمل بنمط مستقل"
-      >
-        <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
-        <span>تطبيق  مُثبَّت ✓</span>
-      </div>
-    );
-  }
+  const handleInstall = async () => {
+    if (isIos) {
+      setShowGuide(true);
+      return;
+    }
+    if (!deferredPrompt) return;
 
-  return (
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setVisible(false);
+    setDeferredPrompt(null);
+  };
+
+  if (!visible) return null;
+
+  // portal علشان الكارت يبقى fixed فعلاً حتى لو اتركّب جوه عنصر عليه transform (زي السايدبار)
+  return createPortal(
     <>
-      <button
-        type="button"
-        onClick={handleInstallClick}
-        title="تثبيت لوحة التحكم كتطبيق مستقل على هاتفك"
-        className={
-          className ||
-          'w-full flex lg:hidden items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-600/20 via-amber-500/15 to-transparent text-amber-300 hover:text-white hover:from-amber-600 hover:to-amber-500 text-xs font-bold transition-all border border-amber-500/30 hover:border-amber-400 group shadow-sm'
-        }
+      {/* الكارت العايم */}
+      <div
+        dir="rtl"
+        className={`fixed z-50 inset-x-3 bottom-3 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-80 lg:hidden pb-[env(safe-area-inset-bottom)] ${className}`}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 group-hover:bg-white/20 group-hover:text-white flex items-center justify-center transition">
-            <Smartphone className="w-3.5 h-3.5" />
+        <div className="relative bg-white border border-gray-200 shadow-2xl rounded-2xl p-3.5">
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="إغلاق"
+            className="absolute top-2 left-2 w-7 h-7 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-center gap-3 pl-6">
+            <div className="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <Smartphone className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900">ثبّت تطبيق لوحة التحكم</p>
+              <p className="text-[11px] text-gray-500 leading-relaxed">
+                افتحه من شاشتك الرئيسية بسرعة، من غير متصفح.
+              </p>
+            </div>
           </div>
-          <span>تثبيت تطبيق </span>
-        </div>
 
-      </button>
-
-      {/* نافذة إرشادية لمستخدمي هواتف آيفون (Safari iOS) */}
-      {showIosTip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-sm bg-neutral-900 border border-neutral-700 text-white p-6 rounded-3xl shadow-2xl">
+          <div className="flex gap-2 mt-3">
             <button
-              onClick={() => setShowIosTip(false)}
-              className="absolute top-4 left-4 w-8 h-8 rounded-full bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center"
+              type="button"
+              onClick={handleInstall}
+              className="flex-[2] py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-bold transition"
+            >
+              {isIos ? 'طريقة التثبيت' : 'تثبيت التطبيق'}
+            </button>
+            <button
+              type="button"
+              onClick={dismiss}
+              className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition"
+            >
+              لاحقاً
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* شرح التثبيت على iPhone / iPad */}
+      {showGuide && (
+        <div
+          dir="rtl"
+          className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4"
+          onClick={() => setShowGuide(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="تثبيت التطبيق على آيفون"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white w-full sm:max-w-sm max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setShowGuide(false)}
+              aria-label="إغلاق"
+              className="absolute top-3 left-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"
             >
               <X className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <Smartphone className="w-5 h-5" />
               </div>
-              <h4 className="font-bold text-sm">تثبيت التطبيق على آيفون (iOS)</h4>
+              <h4 className="text-base font-bold text-gray-900">التثبيت على آيفون</h4>
             </div>
-            <p className="text-xs text-neutral-300 leading-relaxed mb-4">
-              لتثبيت لوحة التحكم كتطبيق على شاشة هاتفك الرئيسية:
+
+            <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
+              لتثبيت التطبيق على جهاز الآيفون اضغط مشاركة ثم اختر «إضافة إلى الشاشة الرئيسية»
+              أو "Add to Home Screen" من القائمة.
             </p>
-            <ol className="text-xs text-neutral-300 space-y-2.5 list-decimal list-inside pr-1">
-              <li>اضغط على زر <strong>المشاركة (Share)</strong> في شريط متصفح Safari بالأسفل.</li>
-              <li>مرر لأسفل واختر <strong>"إضافة إلى الصفحة الرئيسية" (Add to Home Screen)</strong>.</li>
-              <li>اضغط <strong>"إضافة" (Add)</strong> في الزاوية العلوية.</li>
+
+            <img
+              src="/pwa_ios.png"
+              alt="شرح تثبيت التطبيق على iOS"
+              loading="lazy"
+              decoding="async"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className="w-full rounded-xl border border-gray-200 shadow-sm mb-4"
+            />
+
+            <ol className="space-y-3">
+              <Step n={1} icon={<Share className="w-5 h-5" />}>
+                اضغط زر <strong>المشاركة</strong> في شريط Safari.
+              </Step>
+              <Step n={2} icon={<SquarePlus className="w-5 h-5" />}>
+                اختار <strong>«إضافة إلى الشاشة الرئيسية»</strong> (Add to Home Screen).
+              </Step>
+              <Step n={3} icon={<Check className="w-5 h-5" />}>
+                اضغط <strong>«إضافة»</strong> (Add) فوق على اليمين.
+              </Step>
             </ol>
+
+            <p className="mt-4 text-[11px] text-gray-500 leading-relaxed bg-amber-50 border border-amber-100 rounded-xl p-2.5">
+              لو بتفتح من متصفح تاني غير Safari (زي Chrome أو من جوه تطبيق)، افتح الرابط في Safari
+              الأول.
+            </p>
+
             <button
-              onClick={() => setShowIosTip(false)}
-              className="w-full mt-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition"
+              type="button"
+              onClick={() => setShowGuide(false)}
+              className="w-full mt-4 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold transition"
             >
-              حسناً، فهمت
+              فهمت
             </button>
           </div>
         </div>
       )}
-    </>
+    </>,
+    document.body
+  );
+}
+
+function Step({
+  n,
+  icon,
+  children,
+}: {
+  n: number;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-center gap-3">
+      <span className="w-6 h-6 shrink-0 rounded-full bg-gray-900 text-white text-[11px] font-bold flex items-center justify-center">
+        {n}
+      </span>
+      <span className="w-10 h-10 shrink-0 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center">
+        {icon}
+      </span>
+      <span className="text-xs text-gray-700 leading-relaxed">{children}</span>
+    </li>
   );
 }

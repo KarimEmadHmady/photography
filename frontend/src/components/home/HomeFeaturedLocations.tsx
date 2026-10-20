@@ -6,6 +6,7 @@ import { Camera, MapPin, Sparkles, ArrowLeft } from 'lucide-react';
 import { ILocation } from '../../types';
 import { optimizeImageUrl } from '../../lib/image';
 import { container, focusRing, linkAmber, SectionHeading } from './HomeCommon';
+import { ScrollReveal } from '../ui/ScrollReveal';
 
 interface HomeFeaturedLocationsProps {
   locations: ILocation[];
@@ -112,35 +113,53 @@ export function HomeFeaturedLocations({ locations, currency }: HomeFeaturedLocat
   return (
     <section className="content-auto bg-neutral-50 border-y border-neutral-200 py-10 lg:py-14">
       <div className={container}>
-        <SectionHeading
-          title="أشهر مواقع وجلسات تصوير السيشن"
-          subtitle="مواقع مختارة بعناية بأسعار واضحة من أول نظرة."
-          action={
-            <Link href="/locations" className={`${linkAmber} self-start`}>
-              <span>عرض كل الأماكن</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          }
-        />
+        <ScrollReveal animation="fade-up" duration={750} distance={24}>
+          <SectionHeading
+            title="أشهر مواقع وجلسات تصوير السيشن"
+            subtitle="مواقع مختارة بعناية بأسعار واضحة من أول نظرة."
+            action={
+              <Link href="/locations" className={`${linkAmber} self-start`}>
+                <span>عرض كل الأماكن</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            }
+          />
+        </ScrollReveal>
 
         <div className="space-y-4 sm:space-y-5">
           {/* الأبرز + مكانين جنبه */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
-            <FeaturedOverlayCard
-              loc={leadLoc}
-              currency={currency}
-              large
+            <ScrollReveal
+              animation="fade-up"
+              delay={100}
+              duration={800}
+              distance={28}
               className={sideLocs.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}
-            />
+            >
+              <FeaturedOverlayCard
+                loc={leadLoc}
+                currency={currency}
+                large
+                className="w-full h-full"
+              />
+            </ScrollReveal>
             {sideLocs.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4 sm:gap-5">
-                {sideLocs.map((loc) => (
-                  <FeaturedOverlayCard
+                {sideLocs.map((loc, idx) => (
+                  <ScrollReveal
                     key={loc._id}
-                    loc={loc}
-                    currency={currency}
+                    animation="fade-up"
+                    delay={200 + idx * 100}
+                    duration={750}
+                    distance={24}
                     className="h-full"
-                  />
+                  >
+                    <FeaturedOverlayCard
+                      loc={loc}
+                      currency={currency}
+                      className="h-full"
+                    />
+                  </ScrollReveal>
                 ))}
               </div>
             )}
@@ -149,8 +168,16 @@ export function HomeFeaturedLocations({ locations, currency }: HomeFeaturedLocat
           {/* باقي الأماكن - نفس استايل الأماكن الجانبية */}
           {restLocs.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {restLocs.map((loc) => (
-                <FeaturedOverlayCard key={loc._id} loc={loc} currency={currency} />
+              {restLocs.map((loc, idx) => (
+                <ScrollReveal
+                  key={loc._id}
+                  animation="fade-up"
+                  delay={100 + (idx % 3) * 100}
+                  duration={750}
+                  distance={24}
+                >
+                  <FeaturedOverlayCard loc={loc} currency={currency} />
+                </ScrollReveal>
               ))}
             </div>
           )}

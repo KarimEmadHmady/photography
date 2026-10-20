@@ -13,6 +13,7 @@ import {
 import { api } from '../../../lib/api';
 import { optimizeImageUrl } from '../../../lib/image';
 import { IService, ISiteSettings } from '../../../types';
+import { ScrollReveal } from '../../../components/ui/ScrollReveal';
 
 /* الـ Navbar ثابت (fixed) فنسيب مسافة من فوق */
 const shell = 'min-h-screen bg-neutral-50 pt-28 sm:pt-32';
@@ -128,25 +129,27 @@ export default function ServiceDetailPage() {
     <div className={shell}>
       <div className={`${container} space-y-8 sm:space-y-10 pb-12 lg:pb-20`}>
         {/* Breadcrumb */}
-        <nav
-          className={`flex items-center gap-1.5 text-xs text-neutral-500 overflow-x-auto whitespace-nowrap ${noScrollbar}`}
-          aria-label="مسار التنقل"
-        >
-          <Link href="/" className="hover:text-amber-700 transition shrink-0">
-            الرئيسية
-          </Link>
-          <ChevronLeft className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <Link href="/services" className="hover:text-amber-700 transition shrink-0">
-            الخدمات
-          </Link>
-          <ChevronLeft className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-          <span className="text-neutral-900 font-bold shrink-0">{service.name}</span>
-        </nav>
+        <ScrollReveal animation="fade-down" delay={50} duration={650}>
+          <nav
+            className={`flex items-center gap-1.5 text-xs text-neutral-500 overflow-x-auto whitespace-nowrap ${noScrollbar}`}
+            aria-label="مسار التنقل"
+          >
+            <Link href="/" className="hover:text-amber-700 transition shrink-0">
+              الرئيسية
+            </Link>
+            <ChevronLeft className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <Link href="/services" className="hover:text-amber-700 transition shrink-0">
+              الخدمات
+            </Link>
+            <ChevronLeft className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+            <span className="text-neutral-900 font-bold shrink-0">{service.name}</span>
+          </nav>
+        </ScrollReveal>
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start content-auto">
           {/* Main Image — كاملة من غير قص */}
-          <div className="lg:col-span-6 lg:sticky lg:top-28">
+          <ScrollReveal animation="fade-left" delay={100} duration={800} className="lg:col-span-6 lg:sticky lg:top-28">
             <div className="relative min-h-[220px] rounded-2xl sm:rounded-3xl overflow-hidden bg-amber-50 shadow-md border border-neutral-200">
               {service.mainImage ? (
                 <>
@@ -175,81 +178,91 @@ export default function ServiceDetailPage() {
                 </div>
               )}
             </div>
-          </div>
+          </ScrollReveal>
 
           {/* Content & Action */}
           <div className="lg:col-span-6 space-y-6 bg-white p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-neutral-200 shadow-sm">
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 leading-snug">
-                {service.name}
-              </h1>
-              <span className="block h-1 w-12 rounded-full bg-amber-500" />
-              {service.shortDescription && (
-                <p className="text-neutral-600 text-sm pt-2 leading-relaxed">
-                  {service.shortDescription}
-                </p>
-              )}
-            </div>
+            <ScrollReveal animation="fade-down" delay={150} duration={700}>
+              <div className="space-y-2">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 leading-snug">
+                  {service.name}
+                </h1>
+                <span className="block h-1 w-12 rounded-full bg-amber-500" />
+                {service.shortDescription && (
+                  <p className="text-neutral-600 text-sm pt-2 leading-relaxed">
+                    {service.shortDescription}
+                  </p>
+                )}
+              </div>
+            </ScrollReveal>
 
             {/* Price */}
-            <div className="p-4 bg-amber-100/60 border border-amber-200 rounded-2xl flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-amber-900">سعر الخدمة</span>
-              <span className="text-base font-bold text-amber-900 text-left">{priceText}</span>
-            </div>
+            <ScrollReveal animation="fade-up" delay={250} duration={700}>
+              <div className="p-4 bg-amber-100/60 border border-amber-200 rounded-2xl flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-amber-900">سعر الخدمة</span>
+                <span className="text-base font-bold text-amber-900 text-left">{priceText}</span>
+              </div>
+            </ScrollReveal>
 
             {/* Variants */}
             {service.variants && service.variants.length > 0 && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-bold text-neutral-900">خيارات ومقاسات متوفرة</h2>
-                <div className="space-y-2">
-                  {service.variants.map((variant, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 hover:border-amber-300 transition flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="min-w-0">
-                        <span className="font-semibold text-neutral-900 text-sm">
-                          {variant.name}
-                        </span>
-                        {variant.description && (
-                          <p className="text-neutral-600 mt-0.5 leading-relaxed">
-                            {variant.description}
-                          </p>
+              <ScrollReveal animation="fade-up" delay={350} duration={700}>
+                <div className="space-y-3">
+                  <h2 className="text-sm font-bold text-neutral-900">خيارات ومقاسات متوفرة</h2>
+                  <div className="space-y-2">
+                    {service.variants.map((variant, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 hover:border-amber-300 transition flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <span className="font-semibold text-neutral-900 text-sm">
+                            {variant.name}
+                          </span>
+                          {variant.description && (
+                            <p className="text-neutral-600 mt-0.5 leading-relaxed">
+                              {variant.description}
+                            </p>
+                          )}
+                        </div>
+                        {variant.price?.amount && (
+                          <span className="shrink-0 font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full">
+                            {variant.price.amount} {currency}
+                          </span>
                         )}
                       </div>
-                      {variant.price?.amount && (
-                        <span className="shrink-0 font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full">
-                          {variant.price.amount} {currency}
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </ScrollReveal>
             )}
 
             {/* Description */}
             {service.description && (
-              <div className="space-y-2 pt-4 border-t border-neutral-100">
-                <h2 className="text-sm font-bold text-neutral-900">تفاصيل إضافية عن الخدمة</h2>
-                <p className="text-neutral-600 text-sm leading-loose whitespace-pre-line">
-                  {service.description}
-                </p>
-              </div>
+              <ScrollReveal animation="fade-up" delay={450} duration={700}>
+                <div className="space-y-2 pt-4 border-t border-neutral-100">
+                  <h2 className="text-sm font-bold text-neutral-900">تفاصيل إضافية عن الخدمة</h2>
+                  <p className="text-neutral-600 text-sm leading-loose whitespace-pre-line">
+                    {service.description}
+                  </p>
+                </div>
+              </ScrollReveal>
             )}
 
             {/* WhatsApp CTA — على الموبايل في الشريط السفلي كمان */}
-            <div className="pt-2">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-amber-600 text-white text-sm font-semibold shadow-sm hover:bg-amber-700 transition ${focusRing}`}
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span>طلب أو استفسار عبر واتساب</span>
-              </a>
-            </div>
+            <ScrollReveal animation="fade-up" delay={550} duration={700}>
+              <div className="pt-2">
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-amber-600 text-white text-sm font-semibold shadow-sm hover:bg-amber-700 transition ${focusRing}`}
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>طلب أو استفسار عبر واتساب</span>
+                </a>
+              </div>
+            </ScrollReveal>
           </div>
         </div>
       </div>

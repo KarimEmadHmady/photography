@@ -13,8 +13,20 @@ const focusRing =
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [settings, setSettings] = useState<ISiteSettings | null>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     api.public
@@ -54,19 +66,27 @@ export default function Navbar() {
     : 'https://wa.me/';
 
   return (
-<header
-  className={`fixed top-0 inset-x-3 sm:inset-x-6 mt-3 sm:mt-4 max-w-6xl mx-auto z-50 bg-white/70 backdrop-blur-xl backdrop-saturate-150 border border-white/30 shadow-lg shadow-black/10 transition-[border-radius] duration-200 ease-out ${
-    isOpen ? 'rounded-[24px]' : 'rounded-[32px]'
-  }`}
->
+    <header
+      style={{
+        transition:
+          'opacity 750ms var(--ease-smooth), transform 750ms var(--ease-smooth), background-color 300ms ease, box-shadow 300ms ease, border-radius 250ms ease-out',
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translate3d(0, 0, 0)' : 'translate3d(0, -20px, 0)',
+      }}
+      className={`fixed top-0 inset-x-3 sm:inset-x-6 mt-3 sm:mt-4 max-w-6xl mx-auto z-50 backdrop-saturate-150 border border-white/40 gpu-layer transition-all duration-300 ${
+        scrolled
+          ? 'bg-white/85 shadow-xl shadow-black/10 backdrop-blur-2xl'
+          : 'bg-white/70 shadow-lg shadow-black/5 backdrop-blur-xl'
+      } ${isOpen ? 'rounded-[26px]' : 'rounded-[32px]'}`}
+    >
       <div className="flex items-center justify-between gap-2 h-14 sm:h-16 pe-3 ps-2.5 sm:pe-5 sm:ps-3">
         {/* Logo / Photographer Name */}
         <Link
           href="/"
           className={`flex items-center gap-2.5 group min-w-0 rounded-full ${focusRing}`}
         >
-          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full bg-neutral-900 flex items-center justify-center text-amber-400 group-hover:bg-amber-600 group-hover:text-white transition">
-            <Camera className="w-[18px] h-[18px]" />
+          <div className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full bg-neutral-900 flex items-center justify-center text-amber-400 group-hover:bg-amber-600 group-hover:text-white transition duration-300 group-hover:scale-105">
+            <Camera className="w-[18px] h-[18px] transition-transform duration-300 group-hover:rotate-6" />
           </div>
           <div className="leading-tight min-w-0">
             <span className="font-bold text-sm sm:text-base text-neutral-900 block truncate">
@@ -84,10 +104,10 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition ${focusRing} ${
+              className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium transition-all duration-200 ${focusRing} ${
                 isActive(link.href)
-                  ? 'text-amber-700 bg-amber-50 font-semibold'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
+                  ? 'text-amber-700 bg-amber-50 font-semibold shadow-xs'
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80'
               }`}
             >
               {link.name}
@@ -98,13 +118,13 @@ export default function Navbar() {
         {/* Desktop actions */}
         <div className="hidden md:flex items-center gap-2 shrink-0">
           <ShareButton
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-neutral-900/5 hover:bg-amber-500/10 text-neutral-800 hover:text-amber-700 text-[13px] font-semibold transition border border-neutral-900/10 hover:border-amber-500/30 ${focusRing}`}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-neutral-900/5 hover:bg-amber-500/10 text-neutral-800 hover:text-amber-700 text-[13px] font-semibold transition-all duration-200 border border-neutral-900/10 hover:border-amber-500/30 active:scale-95 ${focusRing}`}
           />
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-600 text-white text-[13px] font-semibold hover:bg-amber-700 shadow-sm transition ${focusRing}`}
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-600 text-white text-[13px] font-semibold hover:bg-amber-700 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 ${focusRing}`}
           >
             <MessageCircle className="w-4 h-4" />
             <span>واتساب</span>
@@ -115,40 +135,49 @@ export default function Navbar() {
         <div className="md:hidden flex items-center gap-1.5 shrink-0">
           <ShareButton
             showLabel={false}
-            className={`w-9 h-9 rounded-full bg-neutral-900/5 hover:bg-amber-500/10 text-neutral-800 hover:text-amber-700 flex items-center justify-center transition border border-neutral-900/10 ${focusRing}`}
+            className={`w-9 h-9 rounded-full bg-neutral-900/5 hover:bg-amber-500/10 text-neutral-800 hover:text-amber-700 flex items-center justify-center transition border border-neutral-900/10 active:scale-95 ${focusRing}`}
           />
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="واتساب"
-            className={`w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center hover:bg-amber-700 transition ${focusRing}`}
+            className={`w-9 h-9 rounded-full bg-amber-600 text-white flex items-center justify-center hover:bg-amber-700 transition active:scale-95 ${focusRing}`}
           >
             <MessageCircle className="w-[18px] h-[18px]" />
           </a>
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className={`w-9 h-9 rounded-full flex items-center justify-center text-neutral-800 hover:bg-neutral-900/5 transition ${focusRing}`}
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-neutral-800 hover:bg-neutral-900/5 transition duration-200 active:scale-90 ${focusRing}`}
             aria-label="القائمة"
             aria-expanded={isOpen}
           >
-            {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isOpen ? <X className="w-5 h-5 transition-transform duration-200 rotate-90" /> : <Menu className="w-5 h-5 transition-transform duration-200" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden border-t border-neutral-900/10 px-3 pt-2 pb-3 space-y-1">
-          {navLinks.map((link) => (
+      {/* Mobile Menu with Ultra-Smooth CSS Grid Accordion */}
+      <div
+        className={`md:hidden grid transition-all duration-300 ease-out px-3 ${
+          isOpen
+            ? 'grid-rows-[1fr] opacity-100 border-t border-neutral-900/10 pt-2 pb-3'
+            : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="overflow-hidden space-y-1">
+          {navLinks.map((link, idx) => (
             <Link
               key={link.href}
               href={link.href}
-              className={`block px-4 py-2.5 rounded-2xl text-sm font-medium transition ${
+              style={{
+                transitionDelay: isOpen ? `${idx * 40}ms` : '0ms',
+              }}
+              className={`block px-4 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200 ${
                 isActive(link.href)
                   ? 'bg-amber-50 text-amber-700 font-semibold'
-                  : 'text-neutral-700 hover:bg-neutral-900/5'
-              }`}
+                  : 'text-neutral-700 hover:bg-neutral-900/5 hover:translate-x-[-2px]'
+              } ${isOpen ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'}`}
             >
               {link.name}
             </Link>
@@ -159,7 +188,7 @@ export default function Navbar() {
             />
           </div>
         </div>
-      )}
+      </div>
     </header>
   );
 }

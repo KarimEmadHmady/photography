@@ -78,29 +78,29 @@ export default function HomePage() {
   )}`;
 
   return (
-    <div className="bg-white">
-      {/* 1. Hero Section */}
+    <div className="bg-white overflow-hidden">
+      {/* 1. Hero Section - مع أنيميشن متتابع للعنوان والأزرار والكارت */}
       <HomeHero settings={settings} whatsappUrl={whatsappUrl} />
 
-      {/* 2. Featured Regions Section */}
+      {/* 2. Featured Regions Section - مع أنيميشن متتابع للعنوان والكروت */}
       <HomeFeaturedRegions regions={featuredRegions} />
 
-      {/* 3. Featured Locations Section */}
+      {/* 3. Featured Locations Section - مع أنيميشن متتابع للعنوان والكارت الرئيسي والكروت الجانبية */}
       <HomeFeaturedLocations
         locations={featuredLocations}
         currency={settings.currencyLabel}
       />
 
-      {/* 4. Featured Services Section */}
+      {/* 4. Featured Services Section - مع أنيميشن متتابع للباقات والخدمات */}
       <HomeFeaturedServices
         services={featuredServices}
         currency={settings.currencyLabel}
       />
 
-      {/* 5. How It Works Section */}
+      {/* 5. How It Works Section - مع أنيميشن متتابع للخطوات 1 إلى 4 */}
       <HomeHowItWorks />
 
-      {/* 6. Contact CTA Section */}
+      {/* 6. Contact CTA Section - مع أنيميشن زووم وتتابع للعنوان والتفاصيل وأزرار التواصل */}
       <HomeContactCta
         whatsappUrl={whatsappUrl}
         phone={settings.contact?.phone}

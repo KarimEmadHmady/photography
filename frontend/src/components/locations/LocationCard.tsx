@@ -5,6 +5,7 @@ import { MapPin, Camera, Star, ArrowLeft } from 'lucide-react';
 import { ILocation } from '../../types';
 import { optimizeImageUrl } from '../../lib/image';
 import { EAGER_IMAGES } from './constants';
+import { ScrollReveal } from '../ui/ScrollReveal';
 
 interface LocationCardProps {
   location: ILocation;
@@ -17,10 +18,17 @@ export function LocationCard({ location, index, currency }: LocationCardProps) {
     typeof location.regionId === 'object' ? (location.regionId as any).name : '';
 
   return (
-    <Link
-      href={`/locations/${location.slug}`}
-      className="group flex flex-col bg-white rounded-xl overflow-hidden border border-neutral-200 hover:border-amber-300 shadow-xs hover:shadow-lg lg:hover:-translate-y-1 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+    <ScrollReveal
+      animation="fade-up"
+      delay={80 + (index % 6) * 80}
+      duration={750}
+      distance={28}
+      className="h-full"
     >
+      <Link
+        href={`/locations/${location.slug}`}
+        className="group flex flex-col bg-white rounded-xl overflow-hidden border border-neutral-200 hover:border-amber-300 shadow-xs hover:shadow-lg lg:hover:-translate-y-1 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 h-full"
+      >
       <div className="relative aspect-[16/9] sm:aspect-[16/10] bg-neutral-200 overflow-hidden">
         {location.coverImage ? (
           <img
@@ -84,5 +92,6 @@ export function LocationCard({ location, index, currency }: LocationCardProps) {
         </div>
       </div>
     </Link>
+    </ScrollReveal>
   );
 }

@@ -1,8 +1,7 @@
-'use client';
-
 import { Filter } from 'lucide-react';
 import { IRegion } from '../../types';
 import { chip } from './constants';
+import { ScrollReveal } from '../ui/ScrollReveal';
 
 interface RegionFilterProps {
   regions: IRegion[];
@@ -20,7 +19,8 @@ export function RegionFilter({
   onRetryRegions,
 }: RegionFilterProps) {
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl p-3 sm:p-4 space-y-2.5 shadow-xs">
+    <ScrollReveal animation="fade-up" delay={120} duration={750} distance={20}>
+      <div className="bg-white border border-neutral-200 rounded-xl p-3 sm:p-4 space-y-2.5 shadow-xs">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-xs font-semibold text-neutral-700">
           <Filter className="w-3.5 h-3.5 text-amber-600" />
@@ -77,5 +77,6 @@ export function RegionFilter({
         )}
       </div>
     </div>
+    </ScrollReveal>
   );
 }

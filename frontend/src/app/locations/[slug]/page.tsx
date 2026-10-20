@@ -21,6 +21,7 @@ import {
   LocationSkeleton,
   LocationErrorState,
 } from './components';
+import { ScrollReveal } from '../../../components/ui/ScrollReveal';
 
 export default function LocationDetailPage() {
   const params = useParams();
@@ -109,7 +110,7 @@ export default function LocationDetailPage() {
 
         {/* 2. سلايدر الغلاف + صندوق التفاصيل والأسعار والحجز */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-start">
-          <div className="lg:col-span-7">
+          <ScrollReveal animation="fade-left" duration={800} delay={100} className="lg:col-span-7">
             {sliderImages.length > 0 ? (
               <CoverSlider
                 key={location._id}
@@ -122,7 +123,7 @@ export default function LocationDetailPage() {
                 <Camera className="w-10 h-10" />
               </div>
             )}
-          </div>
+          </ScrollReveal>
 
           <LocationInfoBooking
             location={location}
@@ -134,12 +135,14 @@ export default function LocationDetailPage() {
 
         {/* 3. تفاصيل "عن هذا المكان" */}
         {location.description && (
-          <section className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-neutral-200 shadow-xs space-y-3">
-            <SectionTitle>عن هذا المكان</SectionTitle>
-            <p className="text-neutral-600 text-sm leading-relaxed sm:leading-loose whitespace-pre-line max-w-3xl">
-              {location.description}
-            </p>
-          </section>
+          <ScrollReveal animation="fade-up" duration={750} delay={100} distance={24}>
+            <section className="bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-neutral-200 shadow-xs space-y-3">
+              <SectionTitle>عن هذا المكان</SectionTitle>
+              <p className="text-neutral-600 text-sm leading-relaxed sm:leading-loose whitespace-pre-line max-w-3xl">
+                {location.description}
+              </p>
+            </section>
+          </ScrollReveal>
         )}
 
         {/* 4. معرض صور الجلسات */}

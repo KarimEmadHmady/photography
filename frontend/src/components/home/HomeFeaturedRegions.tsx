@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { IRegion } from '../../types';
 import { optimizeImageUrl } from '../../lib/image';
 import { container, focusRing, linkAmber, SectionHeading } from './HomeCommon';
+import { ScrollReveal } from '../ui/ScrollReveal';
 
 interface HomeFeaturedRegionsProps {
   regions: IRegion[];
@@ -17,24 +18,32 @@ export function HomeFeaturedRegions({ regions }: HomeFeaturedRegionsProps) {
   return (
     <section className="bg-white py-10 lg:py-14">
       <div className={container}>
-        <SectionHeading
-          title="استكشف أماكن التصوير حسب المنطقة"
-          subtitle="اختر المنطقة الأقرب إليك وتصفح أجمل المواقع المتاحة فيها."
-          action={
-            <Link href="/regions" className={`${linkAmber} self-start`}>
-              <span>جميع المناطق</span>
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-          }
-        />
+        <ScrollReveal animation="fade-up" duration={750} distance={24}>
+          <SectionHeading
+            title="استكشف أماكن التصوير حسب المنطقة"
+            subtitle="اختر المنطقة الأقرب إليك وتصفح أجمل المواقع المتاحة فيها."
+            action={
+              <Link href="/regions" className={`${linkAmber} self-start`}>
+                <span>جميع المناطق</span>
+                <ArrowLeft className="w-4 h-4" />
+              </Link>
+            }
+          />
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-          {regions.map((region) => (
-            <Link
+          {regions.map((region, idx) => (
+            <ScrollReveal
               key={region._id}
-              href={`/regions/${region.slug}`}
-              className={`group relative rounded-xl overflow-hidden aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/10] bg-neutral-900 flex flex-col justify-end p-4 lg:p-5 shadow-sm hover:shadow-lg transition ${focusRing}`}
+              animation="fade-up"
+              delay={100 + idx * 100}
+              duration={750}
+              distance={28}
             >
+              <Link
+                href={`/regions/${region.slug}`}
+                className={`group relative rounded-xl overflow-hidden aspect-[16/10] sm:aspect-[4/3] lg:aspect-[16/10] bg-neutral-900 flex flex-col justify-end p-4 lg:p-5 shadow-sm hover:shadow-lg transition ${focusRing}`}
+              >
               {region.coverImage && (
                 <img
                   src={optimizeImageUrl(region.coverImage, { width: 600, quality: 'auto' })}
@@ -58,7 +67,8 @@ export function HomeFeaturedRegions({ regions }: HomeFeaturedRegionsProps) {
                 </span>
               </div>
             </Link>
-          ))}
+          </ScrollReveal>
+        ))}
         </div>
       </div>
     </section>

@@ -5,6 +5,7 @@ import { ZoomIn } from 'lucide-react';
 import { IGalleryImage } from '../../../../types';
 import { optimizeImageUrl } from '../../../../lib/image';
 import { SectionTitle, MOSAIC_CYCLE, INITIAL_VISIBLE, focusRing } from './constants';
+import { ScrollReveal } from '../../../../components/ui/ScrollReveal';
 
 interface LocationGalleryProps {
   gallery: IGalleryImage[];
@@ -27,9 +28,11 @@ export function LocationGallery({
 
   return (
     <section className="content-auto space-y-4">
-      <SectionTitle count={`${gallery.length} صورة`}>
-        معرض صور الجلسات في هذا المكان
-      </SectionTitle>
+      <ScrollReveal animation="fade-up" duration={700} delay={50} distance={20}>
+        <SectionTitle count={`${gallery.length} صورة`}>
+          معرض صور الجلسات في هذا المكان
+        </SectionTitle>
+      </ScrollReveal>
 
       <div className="grid grid-flow-dense grid-cols-2 md:grid-cols-4 auto-rows-[110px] sm:auto-rows-[150px] lg:auto-rows-[190px] gap-2 sm:gap-3">
         {visibleGallery.map((img, idx) => {
@@ -37,13 +40,20 @@ export function LocationGallery({
           const isFeature = idx === 0;
 
           return (
-            <button
-              type="button"
+            <ScrollReveal
               key={img.publicId || idx}
-              onClick={() => onOpenLightbox(idx)}
-              aria-label={`تكبير الصورة ${idx + 1}`}
-              className={`group relative overflow-hidden rounded-lg sm:rounded-xl bg-neutral-200 border border-neutral-200 shadow-xs hover:shadow-xl hover:z-10 transition-shadow duration-300 ${span} ${focusRing}`}
+              animation="fade-up"
+              delay={80 + (idx % 6) * 60}
+              duration={650}
+              distance={20}
+              className={`${span} h-full`}
             >
+              <button
+                type="button"
+                onClick={() => onOpenLightbox(idx)}
+                aria-label={`تكبير الصورة ${idx + 1}`}
+                className={`group relative overflow-hidden rounded-lg sm:rounded-xl bg-neutral-200 border border-neutral-200 shadow-xs hover:shadow-xl hover:z-10 transition-shadow duration-300 w-full h-full ${focusRing}`}
+              >
               <img
                 src={optimizeImageUrl(img.url, { width: 500, quality: 'auto' })}
                 alt={img.alt || locationName}
@@ -71,9 +81,10 @@ export function LocationGallery({
                 </span>
               )}
             </button>
-          );
-        })}
-      </div>
+          </ScrollReveal>
+        );
+      })}
+    </div>
 
       {gallery.length > INITIAL_VISIBLE && (
         <div className="flex justify-center pt-1">

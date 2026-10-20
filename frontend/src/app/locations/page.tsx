@@ -18,6 +18,7 @@ import {
   LocationsErrorState,
   LocationsInfiniteFooter,
 } from '../../components/locations';
+import { ScrollReveal } from '../../components/ui/ScrollReveal';
 
 function LocationsContent() {
   const searchParams = useSearchParams();
@@ -232,13 +233,15 @@ function LocationsContent() {
           <LocationsEmptyState />
         ) : (
           <>
-            <div className="flex items-center justify-between text-xs text-neutral-500 text-right">
-              <span>
-                {totalLocations > 0
-                  ? `عرض ${locations.length} من أصل ${totalLocations} مكان تصوير`
-                  : `${locations.length} مكان تصوير`}
-              </span>
-            </div>
+            <ScrollReveal animation="fade" delay={50} duration={600}>
+              <div className="flex items-center justify-between text-xs text-neutral-500 text-right">
+                <span>
+                  {totalLocations > 0
+                    ? `عرض ${locations.length} من أصل ${totalLocations} مكان تصوير`
+                    : `${locations.length} مكان تصوير`}
+                </span>
+              </div>
+            </ScrollReveal>
 
             <div className="content-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               {locations.map((loc, index) => (
